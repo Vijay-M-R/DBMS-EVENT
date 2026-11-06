@@ -1,6 +1,6 @@
 import { AvailabilityService } from '../services/availability.service.js';
 import { ProviderService } from '../services/provider.service.js';
-import { validateCreateSlot } from '../validators/availability.validator.js';
+import { validateCreateSlot, validateUpdateSlotStatus } from '../validators/availability.validator.js';
 import { parseJsonBody } from '../utils/bodyParser.js';
 import { sendJson, sendError } from '../utils/response.js';
 
@@ -38,6 +38,23 @@ export class AvailabilityController {
       const profile = await ProviderService.getProfileByUserId(req.user.userId);
       const slot = await AvailabilityService.createSlot(profile.provider_id, body);
       return sendJson(res, 201, slot, 'Availability slot created successfully');
+    } catch (err) {
+      return sendError(res, err.statusCode || 500, err.message);
+    }
+  }
+
+  static async updateSlotStatus(req, res) {
+    try {
+      const slotId = parseInt(req.params.id, 10);
+      const body = await parseJsonBody(req);
+      const { isValid, errors } = validateUpdateSlotStatus(body);
+      if (!isValid) {
+        return sendError(res, 400, 'Validation failed', errors);
+      }
+
+      const profile = await ProviderService.getProfileByUserId(req.user.userId);
+      const updated = await AvailabilityService.updateSlotStatus(profile.provider_id, slotId, body.slot_status);
+      return sendJson(res, 200, updated, `Availability slot status updated to ${body.slot_status}`);
     } catch (err) {
       return sendError(res, err.statusCode || 500, err.message);
     }

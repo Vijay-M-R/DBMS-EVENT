@@ -80,7 +80,7 @@ export class ReviewService {
   }
 
   /**
-   * Public: Get reviews for a specific provider
+   * Public / General: Get reviews for a specific provider with pagination
    */
   static async getProviderReviews(providerId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
@@ -109,8 +109,17 @@ export class ReviewService {
       [providerId, limit, offset]
     );
 
+    // Fetch aggregate rating stats from provider profile
+    const provRes = await query(
+      `SELECT average_rating, total_reviews FROM provider_profiles WHERE provider_id = $1`,
+      [providerId]
+    );
+    const profile = provRes.rows[0] || { average_rating: '0.00', total_reviews: 0 };
+
     return {
       reviews: dataRes.rows,
+      average_rating: profile.average_rating,
+      total_reviews: profile.total_reviews,
       pagination: {
         total,
         page: parseInt(page, 10),
@@ -118,5 +127,24 @@ export class ReviewService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Provider: Get reviews for the currently authenticated provider
+   */
+  static async getMyProviderReviews(userId, page = 1, limit = 10) {
+    const provRes = await query(
+      `SELECT provider_id FROM provider_profiles WHERE user_id = $1`,
+      [userId]
+    );
+
+    if (provRes.rowCount === 0) {
+      const err = new Error('Provider profile not found');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const providerId = provRes.rows[0].provider_id;
+    return this.getProviderReviews(providerId, page, limit);
   }
 }

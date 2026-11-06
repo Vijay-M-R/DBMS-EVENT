@@ -11,4 +11,5 @@ availabilityRouter.get('/provider/:providerId', AvailabilityController.getAvaila
 // Provider: Manage slots
 availabilityRouter.get('/my-slots', authenticate, authorize('PROVIDER'), AvailabilityController.getProviderSlots);
 availabilityRouter.post('/', authenticate, authorize('PROVIDER'), AvailabilityController.createSlot);
+availabilityRouter.patch('/:id/status', authenticate, authorize('PROVIDER'), AvailabilityController.updateSlotStatus);
 availabilityRouter.delete('/:id', authenticate, authorize('PROVIDER'), AvailabilityController.deleteSlot);

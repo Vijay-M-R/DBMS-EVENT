@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In / Register — Taskora</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="brand-icon">🛠️</div>
+        <h1>Taskora</h1>
+        <p>Find Services. Connect with Professionals.</p>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="auth-tabs">
+        <button id="tab-login-btn" class="auth-tab-btn active" type="button">Sign In</button>
+        <button id="tab-register-btn" class="auth-tab-btn" type="button">Register</button>
+      </div>
+
+      <!-- Global Alert Container -->
+      <div id="auth-alert" style="display: none;" class="alert"></div>
+
+      <!-- ================= SIGN IN FORM ================= -->
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="form-control" placeholder="user@example.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+          Sign In
+        </button>
+      </form>
+
+      <!-- ================= REGISTRATION FORM ================= -->
+      <form id="register-form" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">I want to register as:</label>
+          <div style="display: flex; gap: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+              <input type="radio" name="reg-role" value="PROVIDER" checked>
+              <span class="font-semibold">Service Provider</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+              <input type="radio" name="reg-role" value="CUSTOMER">
+              <span class="font-semibold">Customer</span>
+            </label>
+          </div>
+          <p class="form-text">Administrator accounts are provisioned via system credentials only.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="Vijay Kumar" required minlength="2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="provider@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-phone">Phone Number</label>
+          <input type="tel" id="reg-phone" class="form-control" placeholder="+919876543210" required pattern="^\+?[0-9]{7,15}$">
+          <p class="form-text">Format: 7 to 15 digits (e.g. +919876543210 or 9876543210)</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Password</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="At least 8 characters" required minlength="8">
+        </div>
+
+        <!-- Provider Specific Fields -->
+        <div id="provider-fields">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="reg-city">Service City</label>
+              <input type="text" id="reg-city" class="form-control" placeholder="Bangalore">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="reg-pincode">Service Pincode</label>
+              <input type="text" id="reg-pincode" class="form-control" placeholder="560001">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="reg-submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+          Create Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script type="module">
+    import { apiFetch, Auth, showToast } from '/js/api.js';
+
+    // Tabs toggle
+    const loginTabBtn = document.getElementById('tab-login-btn');
+    const regTabBtn = document.getElementById('tab-register-btn');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const alertBox = document.getElementById('auth-alert');
+    const providerFields = document.getElementById('provider-fields');
+
+    function showAlert(msg, type = 'danger') {
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.style.display = 'block';
+    }
+
+    function clearAlert() {
+      alertBox.style.display = 'none';
+      alertBox.textContent = '';
+    }
+
+    loginTabBtn.addEventListener('click', () => {
+      loginTabBtn.classList.add('active');
+      regTabBtn.classList.remove('active');
+      loginForm.style.display = 'block';
+      registerForm.style.display = 'none';
+      clearAlert();
+    });
+
+    regTabBtn.addEventListener('click', () => {
+      regTabBtn.classList.add('active');
+      loginTabBtn.classList.remove('active');
+      registerForm.style.display = 'block';
+      loginForm.style.display = 'none';
+      clearAlert();
+    });
+
+    // Toggle provider extra fields
+    document.querySelectorAll('input[name="reg-role"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'PROVIDER') {
+          providerFields.style.display = 'block';
+        } else {
+          providerFields.style.display = 'none';
+        }
+      });
+    });
+
+    // Handle Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAlert();
+      const submitBtn = document.getElementById('login-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Authenticating...';
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const res = await apiFetch('/auth/login', {
+          method: 'POST',
+          body: { email, password },
+        });
+
+        Auth.setAuth(res.data.token, res.data.user, res.data.profile);
+        showToast('Login successful!', 'success');
+
+        const role = res.data.user.role;
+        setTimeout(() => {
+          if (role === 'PROVIDER') {
+            window.location.href = '/provider/index.html';
+          } else if (role === 'ADMIN') {
+            window.location.href = '/admin/index.html';
+          } else {
+            showAlert(`Logged in successfully as ${role}. (Customer portal will be linked in upcoming phase).`, 'success');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In';
+          }
+        }, 600);
+      } catch (err) {
+        showAlert(err.message || 'Login failed. Please verify your credentials.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Handle Registration
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAlert();
+      const submitBtn = document.getElementById('reg-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+
+      const role = document.querySelector('input[name="reg-role"]:checked').value;
+      const full_name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const service_city = document.getElementById('reg-city')?.value?.trim();
+      const service_pincode = document.getElementById('reg-pincode')?.value?.trim();
+
+      const payload = { full_name, email, phone, password, role };
+      if (role === 'PROVIDER') {
+        if (service_city) payload.service_city = service_city;
+        if (service_pincode) payload.service_pincode = service_pincode;
+      }
+
+      try {
+        const res = await apiFetch('/auth/register', {
+          method: 'POST',
+          body: payload,
+        });
+
+        Auth.setAuth(res.data.token, res.data.user, res.data.profile);
+        showToast('Registration successful!', 'success');
+
+        setTimeout(() => {
+          if (role === 'PROVIDER') {
+            window.location.href = '/provider/index.html';
+          } else {
+            showAlert('Customer account created successfully!', 'success');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
+          }
+        }, 800);
+      } catch (err) {
+        showAlert(err.message || 'Registration failed.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>

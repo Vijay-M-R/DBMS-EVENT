@@ -5,6 +5,9 @@ import { authorize } from '../middleware/rbac.js';
 
 export const reviewRouter = new Router();
 
+// Provider: View reviews for the authenticated provider
+reviewRouter.get('/my-reviews', authenticate, authorize('PROVIDER'), ReviewController.getMyReviews);
+
 // Public: View reviews for a provider
 reviewRouter.get('/provider/:providerId', ReviewController.getProviderReviews);
 

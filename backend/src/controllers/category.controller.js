@@ -40,9 +40,27 @@ export class CategoryController {
   static async updateCategory(req, res) {
     try {
       const categoryId = parseInt(req.params.id, 10);
+      if (isNaN(categoryId)) {
+        return sendError(res, 400, 'Invalid category ID');
+      }
+
       const body = await parseJsonBody(req);
       const updated = await CategoryService.updateCategory(categoryId, body);
       return sendJson(res, 200, updated, 'Category updated successfully');
+    } catch (err) {
+      return sendError(res, err.statusCode || 500, err.message);
+    }
+  }
+
+  static async deleteCategory(req, res) {
+    try {
+      const categoryId = parseInt(req.params.id, 10);
+      if (isNaN(categoryId)) {
+        return sendError(res, 400, 'Invalid category ID');
+      }
+
+      const deleted = await CategoryService.deleteCategory(req.user?.userId, categoryId);
+      return sendJson(res, 200, deleted, 'Category deleted successfully');
     } catch (err) {
       return sendError(res, err.statusCode || 500, err.message);
     }

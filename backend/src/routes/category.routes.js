@@ -12,3 +12,4 @@ categoryRouter.get('/', CategoryController.getActiveCategories);
 categoryRouter.get('/all', authenticate, authorize('ADMIN'), CategoryController.getAllCategories);
 categoryRouter.post('/', authenticate, authorize('ADMIN'), CategoryController.createCategory);
 categoryRouter.put('/:id', authenticate, authorize('ADMIN'), CategoryController.updateCategory);
+categoryRouter.delete('/:id', authenticate, authorize('ADMIN'), CategoryController.deleteCategory);

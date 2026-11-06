@@ -1,4 +1,4 @@
-import { query } from '../config/database.js';
+import { query, withTransaction } from '../config/database.js';
 
 export class AvailabilityService {
   /**
@@ -29,6 +29,63 @@ export class AvailabilityService {
     );
 
     return res.rows[0];
+  }
+
+  /**
+   * Provider: Update slot status (toggle AVAILABLE <-> BLOCKED)
+   * Uses row-level locking (SELECT ... FOR UPDATE) inside a transaction to prevent booking conflicts.
+   */
+  static async updateSlotStatus(providerId, slotId, newStatus) {
+    return withTransaction(async (client) => {
+      // 1. Acquire row-level pessimistic lock
+      const slotRes = await client.query(
+        `SELECT slot_id, provider_id, slot_date, start_time, end_time, slot_status
+         FROM availability_slots
+         WHERE slot_id = $1
+         FOR UPDATE`,
+        [slotId]
+      );
+
+      if (slotRes.rowCount === 0) {
+        const err = new Error('Availability slot not found');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const slot = slotRes.rows[0];
+
+      // 2. Ownership verification
+      if (Number(slot.provider_id) !== Number(providerId)) {
+        const err = new Error('Unauthorized: Slot does not belong to your schedule');
+        err.statusCode = 403;
+        throw err;
+      }
+
+      // 3. Prevent modifying actively booked slots
+      if (slot.slot_status === 'BOOKED') {
+        const err = new Error('Cannot modify status of an actively booked slot. Manage via booking requests.');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      // 4. Handle other invalid states (e.g. CANCELLED)
+      if (slot.slot_status === 'CANCELLED') {
+        const err = new Error('Cannot modify status of a cancelled slot');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      // 5. Update slot status
+      const updateRes = await client.query(
+        `UPDATE availability_slots
+         SET slot_status = $1
+         WHERE slot_id = $2
+         RETURNING *`,
+        [newStatus, slotId]
+      );
+
+      return updateRes.rows[0];
+    });
   }
 
   /**

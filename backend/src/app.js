@@ -1,6 +1,7 @@
 import { Router } from './utils/router.js';
 import { handleCors } from './middleware/cors.js';
 import { sendJson, sendError } from './utils/response.js';
+import { serveStatic } from './utils/staticServer.js';
 
 import { authRouter } from './routes/auth.routes.js';
 import { userRouter } from './routes/user.routes.js';
@@ -49,10 +50,16 @@ export const app = async (req, res) => {
   });
 
   try {
-    // 3. Dispatch through router
+    // 3. Attempt to serve static frontend files if request is not targeted at API or health
+    if (!req.url.startsWith('/api/') && !req.url.startsWith('/health')) {
+      const staticServed = await serveStatic(req, res);
+      if (staticServed) return;
+    }
+
+    // 4. Dispatch through router
     const handled = await apiRouter.handle(req, res);
 
-    // 4. Fallback for unmatched routes
+    // 5. Fallback for unmatched routes
     if (handled === null && !res.writableEnded) {
       return sendError(res, 404, `Route ${req.method} ${req.url} not found`);
     }

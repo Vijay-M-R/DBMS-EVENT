@@ -32,3 +32,16 @@ export const validateCreateSlot = (data) => {
 
   return { isValid: errors.length === 0, errors };
 };
+
+export const validateUpdateSlotStatus = (data) => {
+  const errors = [];
+  const { slot_status } = data || {};
+
+  if (!slot_status || typeof slot_status !== 'string') {
+    errors.push('slot_status is required and must be a string');
+  } else if (!['AVAILABLE', 'BLOCKED'].includes(slot_status)) {
+    errors.push('slot_status can only be updated to AVAILABLE or BLOCKED');
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
