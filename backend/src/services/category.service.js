@@ -1,4 +1,4 @@
-import { query } from '../config/database.js';
+import { query, withTransaction } from '../config/database.js';
 
 export class CategoryService {
   /**
@@ -71,5 +71,69 @@ export class CategoryService {
       throw err;
     }
     return res.rows[0];
+  }
+
+  /**
+   * Admin: Delete category safely with dependency check
+   * Checks whether ANY services reference this category before deletion.
+   * If services exist, returns 409 Conflict instructing admin to deactivate instead.
+   */
+  static async deleteCategory(adminUserId, categoryId) {
+    const id = parseInt(categoryId, 10);
+    if (isNaN(id)) {
+      const err = new Error('Invalid category ID');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const catRes = await query(
+      'SELECT category_id, category_name FROM categories WHERE category_id = $1',
+      [id]
+    );
+
+    if (catRes.rowCount === 0) {
+      const err = new Error('Category not found');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const category = catRes.rows[0];
+
+    // Dependency check: Count services referencing this category
+    const countRes = await query(
+      'SELECT COUNT(*) AS count FROM services WHERE category_id = $1',
+      [id]
+    );
+    const serviceCount = parseInt(countRes.rows[0].count, 10);
+
+    if (serviceCount > 0) {
+      const err = new Error(
+        `Cannot delete category "${category.category_name}" because ${serviceCount} service(s) currently reference it. Please deactivate the category instead.`
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+
+    return withTransaction(async (client) => {
+      const delRes = await client.query(
+        'DELETE FROM categories WHERE category_id = $1 RETURNING *',
+        [id]
+      );
+
+      // Record administrative audit log
+      if (adminUserId) {
+        await client.query(
+          `INSERT INTO admin_logs (admin_id, action_type, target_type, target_id, description)
+           VALUES ($1, 'DELETE_CATEGORY', 'categories', $2, $3)`,
+          [
+            adminUserId,
+            id,
+            `Deleted category "${category.category_name}" (ID: ${id})`,
+          ]
+        );
+      }
+
+      return delRes.rows[0];
+    });
   }
 }

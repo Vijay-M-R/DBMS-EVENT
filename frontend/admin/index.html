@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal — Taskora</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="brand-icon">⚡</span>
+        <div>
+          <h2>Taskora</h2>
+          <span class="brand-subtitle">Administrator Portal</span>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        <span class="user-name" id="sidebar-admin-name">Admin User</span>
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.2rem;">
+          <span class="user-role" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">ADMIN</span>
+          <span class="badge badge-active">VERIFIED</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="tab-dashboard">
+          <span class="nav-icon">📊</span> Platform Dashboard
+        </button>
+        <button class="nav-item" data-tab="tab-customers">
+          <span class="nav-icon">👥</span> Customer Management
+        </button>
+        <button class="nav-item" data-tab="tab-providers">
+          <span class="nav-icon">🛠️</span> Provider Verification
+        </button>
+        <button class="nav-item" data-tab="tab-categories">
+          <span class="nav-icon">🏷️</span> Category Management
+        </button>
+        <button class="nav-item" data-tab="tab-bookings">
+          <span class="nav-icon">📅</span> Booking Monitoring
+        </button>
+        <button class="nav-item" data-tab="tab-services">
+          <span class="nav-icon">📦</span> Service Monitoring
+        </button>
+        <button class="nav-item" data-tab="tab-logs">
+          <span class="nav-icon">📜</span> Activity Audit Logs
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="btn btn-secondary btn-sm" style="width: 100%;">
+          🚪 Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main-content">
+
+      <!-- ================= TAB 1: PLATFORM DASHBOARD ================= -->
+      <section id="tab-dashboard" class="content-section active">
+        <div class="main-header">
+          <div>
+            <h1>Platform Overview</h1>
+            <p class="subtitle">System health, marketplace KPIs, and real-time operational aggregates.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-dashboard">
+            🔄 Refresh Stats
+          </button>
+        </div>
+
+        <!-- KPI Grid: Primary Metrics -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">💰</span>
+            <div class="stat-value" id="kpi-revenue">₹0.00</div>
+            <div class="stat-label">Platform Gross Revenue</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">👥</span>
+            <div class="stat-value" id="kpi-customers">0</div>
+            <div class="stat-label">Registered Customers</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🛠️</span>
+            <div class="stat-value" id="kpi-providers">0</div>
+            <div class="stat-label">Total Providers</div>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid var(--warning);">
+            <span class="stat-icon">⏳</span>
+            <div class="stat-value" id="kpi-pending-providers" style="color: var(--warning);">0</div>
+            <div class="stat-label">Pending Verifications</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📅</span>
+            <div class="stat-value" id="kpi-bookings">0</div>
+            <div class="stat-label">Total Bookings</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📦</span>
+            <div class="stat-value" id="kpi-services">0</div>
+            <div class="stat-label">Active Services Listed</div>
+          </div>
+        </div>
+
+        <!-- Breakdown Details -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+          <!-- Provider Status Breakdown -->
+          <div class="card">
+            <h3 style="margin-bottom: 1rem; font-size: 1.05rem;">Provider Verification Breakdown</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-verified">VERIFIED</span> Active Providers</span>
+                <strong id="breakdown-verified-providers">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-pending">PENDING</span> Verification Queue</span>
+                <strong id="breakdown-pending-providers">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-suspended">SUSPENDED</span> Providers</span>
+                <strong id="breakdown-suspended-providers">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Status Breakdown -->
+          <div class="card">
+            <h3 style="margin-bottom: 1rem; font-size: 1.05rem;">Booking Contract Breakdown</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-completed">COMPLETED</span> Successful Orders</span>
+                <strong id="breakdown-completed-bookings">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-accepted">ACCEPTED</span> In-Progress Orders</span>
+                <strong id="breakdown-accepted-bookings">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-pending">PENDING</span> Confirmation</span>
+                <strong id="breakdown-pending-bookings">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="badge badge-cancelled">CANCELLED</span> Bookings</span>
+                <strong id="breakdown-cancelled-bookings">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: CUSTOMER MANAGEMENT ================= -->
+      <section id="tab-customers" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Customer Management</h1>
+            <p class="subtitle">Inspect registered customers, review booking track records, and manage account statuses.</p>
+          </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1; max-width: 600px;">
+              <input type="text" id="customers-search-input" class="form-input" placeholder="Search customer name or email..." style="min-width: 240px; flex: 1;">
+              <select id="customers-status-filter" class="form-select" style="width: 170px;">
+                <option value="">All Account Statuses</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+                <option value="DEACTIVATED">DEACTIVATED</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-customers-filter">Reset Filters</button>
+          </div>
+        </div>
+
+        <!-- Customers Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Total Bookings</th>
+                <th>Registered</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <tr><td colspan="7" class="text-muted" style="text-align: center; padding: 2rem;">Loading customers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="customers-pagination-container" class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;"></div>
+      </section>
+
+      <!-- ================= TAB 3: PROVIDER MANAGEMENT & VERIFICATION ================= -->
+      <section id="tab-providers" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Provider Management &amp; Verification</h1>
+            <p class="subtitle">Review professional profiles, verify credentials, approve services, or suspend accounts.</p>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1; max-width: 700px;">
+              <input type="text" id="providers-search-input" class="form-input" placeholder="Search provider name, email, or city..." style="min-width: 240px; flex: 1;">
+              <select id="providers-verification-filter" class="form-select" style="width: 180px;">
+                <option value="">All Verifications</option>
+                <option value="PENDING">PENDING Queue</option>
+                <option value="VERIFIED">VERIFIED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-providers-filter">Reset Filters</button>
+          </div>
+        </div>
+
+        <!-- Providers Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider Name</th>
+                <th>Service City</th>
+                <th>Experience</th>
+                <th>Rating &amp; Reviews</th>
+                <th>Verification</th>
+                <th>Account</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="providers-table-body">
+              <tr><td colspan="7" class="text-muted" style="text-align: center; padding: 2rem;">Loading providers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="providers-pagination-container" class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;"></div>
+      </section>
+
+      <!-- ================= TAB 4: CATEGORY MANAGEMENT ================= -->
+      <section id="tab-categories" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Category Management</h1>
+            <p class="subtitle">Organize marketplace classification taxonomy and monitor service associations.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-open-add-category">
+            ➕ Add Category
+          </button>
+        </div>
+
+        <!-- Categories Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Category Name</th>
+                <th>Description</th>
+                <th>Linked Services</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="categories-table-body">
+              <tr><td colspan="7" class="text-muted" style="text-align: center; padding: 2rem;">Loading categories...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= TAB 5: BOOKING MONITORING ================= -->
+      <section id="tab-bookings" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Global Booking Monitor</h1>
+            <p class="subtitle">Real-time oversight of service reservation contracts across all platform actors.</p>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1; max-width: 600px;">
+              <input type="text" id="bookings-search-input" class="form-input" placeholder="Search customer or provider name..." style="min-width: 240px; flex: 1;">
+              <select id="bookings-status-filter" class="form-select" style="width: 170px;">
+                <option value="">All Statuses</option>
+                <option value="PENDING">PENDING</option>
+                <option value="ACCEPTED">ACCEPTED</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-bookings-filter">Reset Filters</button>
+          </div>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Service</th>
+                <th>Customer</th>
+                <th>Provider</th>
+                <th>Slot Schedule</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-table-body">
+              <tr><td colspan="8" class="text-muted" style="text-align: center; padding: 2rem;">Loading bookings...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="bookings-pagination-container" class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;"></div>
+      </section>
+
+      <!-- ================= TAB 6: SERVICE MONITORING ================= -->
+      <section id="tab-services" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Platform Service Directory</h1>
+            <p class="subtitle">Monitor service listings across all providers and enforce marketplace compliance.</p>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1; max-width: 750px;">
+              <input type="text" id="services-search-input" class="form-input" placeholder="Search service name or provider..." style="min-width: 220px; flex: 1;">
+              <select id="services-category-filter" class="form-select" style="width: 180px;">
+                <option value="">All Categories</option>
+              </select>
+              <select id="services-status-filter" class="form-select" style="width: 150px;">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-services-filter">Reset Filters</button>
+          </div>
+        </div>
+
+        <!-- Services Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Service Name</th>
+                <th>Provider</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="services-table-body">
+              <tr><td colspan="7" class="text-muted" style="text-align: center; padding: 2rem;">Loading services...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="services-pagination-container" class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;"></div>
+      </section>
+
+      <!-- ================= TAB 7: ADMINISTRATIVE ACTIVITY LOGS ================= -->
+      <section id="tab-logs" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Administrative Audit Logs</h1>
+            <p class="subtitle">Read-only immutable governance trail of administrative decisions, verifications, and moderations.</p>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="card" style="margin-bottom: 1.25rem; padding: 1rem 1.25rem;">
+          <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1; max-width: 500px;">
+              <input type="text" id="logs-action-input" class="form-input" placeholder="Filter by action keyword (e.g. VERIFICATION, STATUS)..." style="min-width: 280px; flex: 1;">
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-logs-filter">Clear Filter</button>
+          </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Admin User</th>
+                <th>Action Type</th>
+                <th>Target</th>
+                <th>Target ID</th>
+                <th>Description / Reason</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body">
+              <tr><td colspan="6" class="text-muted" style="text-align: center; padding: 2rem;">Loading audit logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="logs-pagination-container" class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: Customer Details -->
+  <div id="modal-customer-detail" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="modal-customer-name">Customer Details</h3>
+        <button class="modal-close" onclick="window.closeAdminModal('modal-customer-detail')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-customer-body">
+        Loading customer data...
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="window.closeAdminModal('modal-customer-detail')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Provider Details -->
+  <div id="modal-provider-detail" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 750px;">
+      <div class="modal-header">
+        <h3 id="modal-provider-title">Provider Profile</h3>
+        <button class="modal-close" onclick="window.closeAdminModal('modal-provider-detail')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-provider-body">
+        Loading provider profile...
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="window.closeAdminModal('modal-provider-detail')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Booking Details -->
+  <div id="modal-booking-detail" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="modal-booking-title">Booking Contract Details</h3>
+        <button class="modal-close" onclick="window.closeAdminModal('modal-booking-detail')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-booking-body">
+        Loading booking details...
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="window.closeAdminModal('modal-booking-detail')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Category Add/Edit Form -->
+  <div id="modal-category-form" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="modal-category-title">Add Category</h3>
+        <button class="modal-close" onclick="window.closeAdminModal('modal-category-form')">&times;</button>
+      </div>
+      <form id="category-form">
+        <input type="hidden" id="category-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="category-name">Category Name *</label>
+            <input type="text" id="category-name" class="form-input" required placeholder="e.g. Home Cleaning, Web Development">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="category-description">Description</label>
+            <textarea id="category-description" class="form-textarea" rows="3" placeholder="Category purpose and scope..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="category-status">Status</label>
+            <select id="category-status" class="form-select">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.closeAdminModal('modal-category-form')">Cancel</button>
+          <button type="submit" id="btn-save-category" class="btn btn-primary btn-sm">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Generic Reason & Confirmation Prompt Modal -->
+  <div id="modal-confirm-action" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="modal-action-title">Confirm Action</h3>
+        <button class="modal-close" onclick="window.closeAdminModal('modal-confirm-action')">&times;</button>
+      </div>
+      <form id="action-confirm-form">
+        <div class="modal-body">
+          <p id="modal-action-message" style="margin-bottom: 1rem; color: var(--text-muted);"></p>
+          <div class="form-group" id="group-action-reason">
+            <label class="form-label" for="action-reason-input">Administrative Reason *</label>
+            <textarea id="action-reason-input" class="form-textarea" rows="3" placeholder="Explain the rationale for this administrative action..."></textarea>
+            <p class="form-text">Mandatory reason of at least 3 characters. Stored in immutable audit logs.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.closeAdminModal('modal-confirm-action')">Cancel</button>
+          <button type="submit" id="btn-action-submit" class="btn btn-danger btn-sm">Confirm Action</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Client-side Controller -->
+  <script type="module" src="/admin/admin.js"></script>
+</body>
+</html>

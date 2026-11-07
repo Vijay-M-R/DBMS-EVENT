@@ -35,4 +35,18 @@ export class ReviewController {
       return sendError(res, err.statusCode || 500, err.message);
     }
   }
+
+  static async getMyReviews(req, res) {
+    try {
+      const { page, limit } = req.query || {};
+      const result = await ReviewService.getMyProviderReviews(
+        req.user.userId,
+        page ? parseInt(page, 10) : 1,
+        limit ? parseInt(limit, 10) : 10
+      );
+      return sendJson(res, 200, result, 'Provider reviews retrieved');
+    } catch (err) {
+      return sendError(res, err.statusCode || 500, err.message);
+    }
+  }
 }

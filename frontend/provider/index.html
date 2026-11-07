@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Portal — Taskora</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="brand-icon">🛠️</span>
+        <div>
+          <h2>Taskora</h2>
+          <span class="brand-subtitle">Provider Portal</span>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        <span class="user-name" id="sidebar-user-name">Loading...</span>
+        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.2rem;">
+          <span class="user-role">PROVIDER</span>
+          <span id="sidebar-verify-badge" class="badge badge-pending">PENDING</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="tab-dashboard">
+          <span class="nav-icon">📊</span> Dashboard Overview
+        </button>
+        <button class="nav-item" data-tab="tab-profile">
+          <span class="nav-icon">👤</span> Profile Details
+        </button>
+        <button class="nav-item" data-tab="tab-services">
+          <span class="nav-icon">💼</span> My Services
+        </button>
+        <button class="nav-item" data-tab="tab-availability">
+          <span class="nav-icon">📅</span> Availability &amp; Slots
+        </button>
+        <button class="nav-item" data-tab="tab-bookings">
+          <span class="nav-icon">📥</span> Inbound Bookings
+        </button>
+        <button class="nav-item" data-tab="tab-history">
+          <span class="nav-icon">📜</span> Booking History
+        </button>
+        <button class="nav-item" data-tab="tab-reviews">
+          <span class="nav-icon">⭐</span> Customer Reviews
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="btn btn-secondary btn-sm" style="width: 100%;">
+          🚪 Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main-content">
+      <!-- Top Alert Banner for Verification Status -->
+      <div id="verification-banner" style="display: none;" class="alert alert-warning">
+        <span style="font-size: 1.25rem;">⚠️</span>
+        <div>
+          <strong id="banner-title">Account Verification Pending</strong>
+          <p id="banner-desc" style="margin-top: 0.25rem; font-size: 0.85rem;">
+            Your provider account is currently pending administrator verification. You can configure your profile and slots, but publishing live services requires admin approval.
+          </p>
+        </div>
+      </div>
+
+      <!-- ================= TAB 1: DASHBOARD OVERVIEW ================= -->
+      <section id="tab-dashboard" class="content-section active">
+        <div class="main-header">
+          <div>
+            <h1>Provider Dashboard</h1>
+            <p>Welcome back! Monitor your live services, incoming bookings and ratings.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper indigo">💼</div>
+            <div class="stat-info">
+              <span class="stat-label">Published Services</span>
+              <span class="stat-value" id="stat-services-count">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper amber">📥</div>
+            <div class="stat-info">
+              <span class="stat-label">Pending Bookings</span>
+              <span class="stat-value" id="stat-pending-count">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper green">✅</div>
+            <div class="stat-info">
+              <span class="stat-label">Completed Bookings</span>
+              <span class="stat-value" id="stat-completed-count">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper blue">⭐</div>
+            <div class="stat-info">
+              <span class="stat-label">Average Rating</span>
+              <span class="stat-value" id="stat-avg-rating">0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Summary Cards -->
+        <div class="card">
+          <h3 style="margin-bottom: 1rem;">Action Center</h3>
+          <p style="margin-bottom: 1.25rem;">Manage your availability and respond to incoming customer reservation requests.</p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="window.switchTab('tab-services')">Manage Services</button>
+            <button class="btn btn-secondary" onclick="window.switchTab('tab-availability')">Update Schedule Slots</button>
+            <button class="btn btn-secondary" onclick="window.switchTab('tab-bookings')">Review Inbound Requests</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: PROFILE MANAGEMENT ================= -->
+      <section id="tab-profile" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Provider Profile</h1>
+            <p>View and manage your professional identity and service area.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <form id="profile-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="prof-name">Full Name</label>
+                <input type="text" id="prof-name" class="form-control" required minlength="2">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-email">Email Address</label>
+                <input type="email" id="prof-email" class="form-control" disabled style="background-color: #f1f5f9;">
+                <p class="form-text">Email address is your primary identity and cannot be changed.</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-phone">Contact Phone</label>
+                <input type="tel" id="prof-phone" class="form-control" required pattern="^\+?[0-9]{7,15}$">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-exp">Experience (Years)</label>
+                <input type="number" id="prof-exp" class="form-control" min="0" max="70" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-city">Service City</label>
+                <input type="text" id="prof-city" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="prof-pincode">Service Pincode</label>
+                <input type="text" id="prof-pincode" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="prof-bio">Professional Bio &amp; Skills</label>
+              <textarea id="prof-bio" class="form-control" rows="4" placeholder="Describe your expertise, certifications, and service offerings..."></textarea>
+            </div>
+
+            <button type="submit" id="save-profile-btn" class="btn btn-primary">
+              💾 Save Profile Changes
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: SERVICES MANAGEMENT ================= -->
+      <section id="tab-services" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Service Offerings</h1>
+            <p>Publish, update, and manage the freelance services you offer to customers.</p>
+          </div>
+          <button id="add-service-btn" class="btn btn-primary">
+            ➕ Add New Service
+          </button>
+        </div>
+
+        <div class="card" style="padding: 0;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Service Name</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="services-table-body">
+                <tr><td colspan="6" class="empty-state">Loading services...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 4: AVAILABILITY & PRICING ================= -->
+      <section id="tab-availability" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Schedule &amp; Availability Slots</h1>
+            <p>Create bookable time slots for customers to reserve your services.</p>
+          </div>
+          <button id="add-slot-btn" class="btn btn-primary">
+            ➕ Add Time Slot
+          </button>
+        </div>
+
+        <div class="card" style="padding: 0;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Start Time</th>
+                  <th>End Time</th>
+                  <th>Status</th>
+                  <th>Active Reservation</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="slots-table-body">
+                <tr><td colspan="6" class="empty-state">Loading availability slots...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 5: INCOMING BOOKINGS ================= -->
+      <section id="tab-bookings" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Inbound Customer Bookings</h1>
+            <p>Review customer booking requests awaiting your confirmation.</p>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 0;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking #</th>
+                  <th>Customer</th>
+                  <th>Service</th>
+                  <th>Scheduled Date &amp; Time</th>
+                  <th>Agreed Price</th>
+                  <th>Notes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inbound-bookings-body">
+                <tr><td colspan="7" class="empty-state">Loading incoming requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 6: BOOKING HISTORY ================= -->
+      <section id="tab-history" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Booking History</h1>
+            <p>Complete historical log of all customer appointments.</p>
+          </div>
+        </div>
+
+        <div class="filter-bar" id="history-filter-bar">
+          <button class="filter-btn active" data-status="ALL">All Bookings</button>
+          <button class="filter-btn" data-status="ACCEPTED">Accepted</button>
+          <button class="filter-btn" data-status="COMPLETED">Completed</button>
+          <button class="filter-btn" data-status="CANCELLED">Cancelled</button>
+          <button class="filter-btn" data-status="REJECTED">Rejected</button>
+        </div>
+
+        <div class="card" style="padding: 0;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Booking #</th>
+                  <th>Customer</th>
+                  <th>Service</th>
+                  <th>Date &amp; Time</th>
+                  <th>Status</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody id="history-bookings-body">
+                <tr><td colspan="6" class="empty-state">Loading history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 7: REVIEWS ================= -->
+      <section id="tab-reviews" class="content-section">
+        <div class="main-header">
+          <div>
+            <h1>Ratings &amp; Customer Reviews</h1>
+            <p>Real feedback from customers who completed services with you.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper amber">⭐</div>
+            <div class="stat-info">
+              <span class="stat-label">Overall Rating</span>
+              <span class="stat-value" id="reviews-avg-rating">0.00 / 5.0</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrapper blue">💬</div>
+            <div class="stat-info">
+              <span class="stat-label">Total Verified Reviews</span>
+              <span class="stat-value" id="reviews-total-count">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom: 1.25rem;">Customer Testimonials</h3>
+          <div id="reviews-list-container">
+            <div class="empty-state">Loading customer reviews...</div>
+          </div>
+          <div id="reviews-pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ================= MODAL: ADD / EDIT SERVICE ================= -->
+  <div id="service-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="service-modal-title">Add Service</h3>
+        <button class="modal-close" onclick="window.closeModal('service-modal')">&times;</button>
+      </div>
+      <form id="service-form">
+        <div class="modal-body">
+          <div id="service-modal-alert" class="alert alert-warning" style="display: none;"></div>
+
+          <input type="hidden" id="service-id-hidden">
+
+          <div class="form-group">
+            <label class="form-label" for="svc-name">Service Name</label>
+            <input type="text" id="svc-name" class="form-control" placeholder="e.g. AC Installation & Diagnostic" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="svc-category">Category</label>
+            <select id="svc-category" class="form-control" required>
+              <option value="">Select Category...</option>
+            </select>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="svc-price">Price (₹)</label>
+              <input type="number" id="svc-price" class="form-control" step="0.01" min="0" placeholder="499.00" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="svc-duration">Duration (Minutes)</label>
+              <input type="number" id="svc-duration" class="form-control" min="1" placeholder="60" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="svc-description">Description</label>
+            <textarea id="svc-description" class="form-control" rows="3" placeholder="Explain what this service covers..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.closeModal('service-modal')">Cancel</button>
+          <button type="submit" id="save-service-submit-btn" class="btn btn-primary">Save Service</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD AVAILABILITY SLOT ================= -->
+  <div id="slot-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create Availability Slot</h3>
+        <button class="modal-close" onclick="window.closeModal('slot-modal')">&times;</button>
+      </div>
+      <form id="slot-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="slot-date">Slot Date</label>
+            <input type="date" id="slot-date" class="form-control" required>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="slot-start">Start Time</label>
+              <input type="time" id="slot-start" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="slot-end">End Time</label>
+              <input type="time" id="slot-end" class="form-control" required>
+            </div>
+          </div>
+          <p class="form-text">End time must be strictly later than start time. Overlapping slots will be rejected.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="window.closeModal('slot-modal')">Cancel</button>
+          <button type="submit" id="save-slot-submit-btn" class="btn btn-primary">Create Slot</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Script Modules -->
+  <script type="module" src="/provider/provider.js"></script>
+</body>
+</html>
