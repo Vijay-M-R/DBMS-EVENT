@@ -544,16 +544,35 @@ async function loadBookings() {
 }
 
 window.updateBookingStatus = async (bookingId, newStatus) => {
-  const actionText = newStatus === 'ACCEPTED' ? 'Accept this customer reservation?' : 'Reject this booking request? (This will release your availability slot)';
-  if (!confirm(actionText)) return;
+  let payload = { booking_status: newStatus };
+
+  if (newStatus === 'ACCEPTED') {
+    if (!confirm('Accept this customer reservation?')) return;
+  } else if (newStatus === 'COMPLETED') {
+    if (!confirm('Mark this service appointment as successfully COMPLETED?')) return;
+  } else if (newStatus === 'REJECTED') {
+    const reason = prompt('Please enter a reason for rejecting this booking request (min 3 characters):');
+    if (!reason || reason.trim().length < 3) {
+      showToast('A rejection reason of at least 3 characters is required.', 'warning');
+      return;
+    }
+    payload.cancellation_reason = reason.trim();
+  } else if (newStatus === 'CANCELLED') {
+    const reason = prompt('Please enter the reason for cancelling this booking (min 3 characters):');
+    if (!reason || reason.trim().length < 3) {
+      showToast('A cancellation reason of at least 3 characters is required.', 'warning');
+      return;
+    }
+    payload.cancellation_reason = reason.trim();
+  }
 
   try {
     await apiFetch(`/bookings/${bookingId}/status`, {
       method: 'PATCH',
-      body: { booking_status: newStatus },
+      body: payload,
     });
 
-    showToast(`Booking #${bookingId} marked as ${newStatus}`, 'success');
+    showToast(`Booking #${bookingId} updated to ${newStatus}`, 'success');
     await loadBookings();
     await loadSlots();
     updateDashboardKPIs();
@@ -567,20 +586,40 @@ function renderBookingHistory(statusFilter) {
   const filtered = statusFilter === 'ALL' ? allHistoryBookings : allHistoryBookings.filter((b) => b.booking_status === statusFilter);
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No bookings found for status: ${statusFilter}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No bookings found for status: ${statusFilter}</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = filtered.map((b) => `
-    <tr>
-      <td>#${b.booking_id}</td>
-      <td>${escapeHtml(b.customer_name || 'Customer')}</td>
-      <td><strong>${escapeHtml(b.service_name)}</strong></td>
-      <td>${formatDate(b.slot_date)} (${formatTime(b.start_time)})</td>
-      <td><span class="badge badge-${b.booking_status.toLowerCase()}">${b.booking_status}</span></td>
-      <td class="font-bold">${formatCurrency(b.service_price)}</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = filtered.map((b) => {
+    let actionsHtml = '<span class="text-muted">—</span>';
+    if (b.booking_status === 'ACCEPTED') {
+      actionsHtml = `
+        <div style="display: flex; gap: 0.35rem;">
+          <button class="btn btn-success btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'COMPLETED')">✓ Complete</button>
+          <button class="btn btn-danger btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'CANCELLED')">Cancel</button>
+        </div>
+      `;
+    } else if (b.booking_status === 'PENDING') {
+      actionsHtml = `
+        <div style="display: flex; gap: 0.35rem;">
+          <button class="btn btn-success btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'ACCEPTED')">✓ Accept</button>
+          <button class="btn btn-danger btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'REJECTED')">✕ Reject</button>
+        </div>
+      `;
+    }
+
+    return `
+      <tr>
+        <td>#${b.booking_id}</td>
+        <td>${escapeHtml(b.customer_name || 'Customer')}</td>
+        <td><strong>${escapeHtml(b.service_name)}</strong></td>
+        <td>${formatDate(b.slot_date)} (${formatTime(b.start_time)})</td>
+        <td><span class="badge badge-${b.booking_status.toLowerCase()}">${b.booking_status}</span></td>
+        <td class="font-bold">${formatCurrency(b.service_price)}</td>
+        <td>${actionsHtml}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 /**

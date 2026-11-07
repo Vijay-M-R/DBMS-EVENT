@@ -21,9 +21,16 @@ A clean, modular, and secure backend architecture and complete PostgreSQL databa
   - **Frameworks:** Framework-free (Strictly No Express, Fastify, NestJS, Koa, or ORMs).
   - **Detailed API Documentation:** [`backend/README.md`](file:///c:/Users/Vijay%20M%20R/DBMS-EVENT/backend/README.md)
 
+- **Frontend Application (`frontend/`):**
+  - **Portals:** Provider Portal (`/provider/index.html`), Administrator Portal (`/admin/index.html`), Authentication & Register (`/login.html`), Gateway Router (`/index.html`).
+  - **Tooling:** Vite development server with proxy to backend API (`http://localhost:5000`), zero-framework vanilla ES modules.
+  - **Styling:** Custom modern responsive CSS stylesheet (`/css/styles.css`).
+
 ---
 
 ## Getting Started
+
+### 1. Backend
 
 ```bash
 # Navigate to backend
@@ -35,6 +42,23 @@ npm install
 # Run automated unit and integration tests
 npm test
 
-# Start the native HTTP server
+# Start the native HTTP server (serves both API and static frontend at http://localhost:5000)
 npm run dev
 ```
+
+### 2. Frontend Development (Optional Vite Dev Server)
+
+```bash
+# Navigate to frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start Vite dev server with Hot Module Reloading (HMR) & API proxy at http://localhost:3000
+npm run dev
+
+# Build production bundle
+npm run build
+```
+

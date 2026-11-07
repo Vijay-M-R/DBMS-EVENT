@@ -41,16 +41,19 @@ export async function serveStatic(req, res) {
   let pathname = decodeURIComponent(parsedUrl.pathname);
 
   // Friendly route redirects:
-  // Root '/' -> '/login.html'
+  // Root '/' -> '/index.html'
   if (pathname === '/' || pathname === '') {
-    res.writeHead(302, { Location: '/login.html' });
-    res.end();
-    return true;
+    pathname = '/index.html';
   }
 
   // '/provider' or '/provider/' -> '/provider/index.html'
   if (pathname === '/provider' || pathname === '/provider/') {
     pathname = '/provider/index.html';
+  }
+
+  // '/admin' or '/admin/' -> '/admin/index.html'
+  if (pathname === '/admin' || pathname === '/admin/') {
+    pathname = '/admin/index.html';
   }
 
   // Construct absolute candidate path

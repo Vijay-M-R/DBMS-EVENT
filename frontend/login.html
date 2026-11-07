@@ -106,6 +106,16 @@
   <script type="module">
     import { apiFetch, Auth, showToast } from '/js/api.js';
 
+    // Auto-redirect if already authenticated
+    if (Auth.isAuthenticated()) {
+      const user = Auth.getUser();
+      if (user?.role === 'PROVIDER') {
+        window.location.replace('/provider/index.html');
+      } else if (user?.role === 'ADMIN') {
+        window.location.replace('/admin/index.html');
+      }
+    }
+
     // Tabs toggle
     const loginTabBtn = document.getElementById('tab-login-btn');
     const regTabBtn = document.getElementById('tab-register-btn');

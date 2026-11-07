@@ -286,6 +286,19 @@ a:hover {
   gap: 1rem;
 }
 
+.stat-card:has(.stat-icon) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.stat-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  display: inline-block;
+}
+
 .stat-icon-wrapper {
   width: 48px;
   height: 48px;
@@ -342,7 +355,7 @@ a:hover {
 .badge-pending { background-color: #fef3c7; color: #92400e; }
 .badge-verified, .badge-active, .badge-accepted, .badge-available { background-color: #d1fae5; color: #065f46; }
 .badge-completed { background-color: #e0e7ff; color: #3730a3; }
-.badge-rejected, .badge-cancelled, .badge-suspended, .badge-inactive { background-color: #fee2e2; color: #991b1b; }
+.badge-rejected, .badge-cancelled, .badge-suspended, .badge-inactive, .badge-deactivated { background-color: #fee2e2; color: #991b1b; }
 .badge-booked { background-color: #dbeafe; color: #1e40af; }
 .badge-blocked { background-color: #f1f5f9; color: #475569; }
 
@@ -468,7 +481,16 @@ tbody tr:hover {
   color: var(--text-main);
 }
 
-.form-control {
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.form-control,
+.form-input,
+.form-select,
+.form-textarea {
   width: 100%;
   padding: 0.65rem 0.875rem;
   border-radius: var(--radius-md);
@@ -477,12 +499,25 @@ tbody tr:hover {
   transition: var(--transition);
   background-color: #fff;
   color: var(--text-main);
+  font-family: inherit;
 }
 
-.form-control:focus {
+.form-control:focus,
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
   border-color: var(--primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .form-grid {
@@ -555,7 +590,8 @@ tbody tr:hover {
   display: flex;
 }
 
-.modal-dialog {
+.modal-dialog,
+.modal-card {
   background-color: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);

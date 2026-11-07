@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskora — Freelance Service Marketplace</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .portal-hero {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem;
+    }
+    .portal-hero h1 {
+      font-size: 2.75rem;
+      margin-bottom: 1rem;
+      letter-spacing: -0.025em;
+    }
+    .portal-hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+    }
+    .portal-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 960px;
+      margin: 0 auto 3rem;
+      padding: 0 1rem;
+    }
+    .portal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition);
+    }
+    .portal-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+      border-color: var(--border-focus);
+    }
+    .portal-card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .portal-card h3 {
+      font-size: 1.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .portal-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-main);">
+    <header style="background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.75rem;">🛠️</span>
+        <h2 style="font-size: 1.25rem; margin: 0;">Taskora</h2>
+      </div>
+      <div id="auth-nav-container">
+        <a href="/login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
+      </div>
+    </header>
+
+    <main class="portal-hero">
+      <div style="font-size: 3.5rem; margin-bottom: 1rem;">⚡</div>
+      <h1>Taskora Service Marketplace</h1>
+      <p>A native multi-tier Freelance Service Platform connecting customers with vetted local service professionals.</p>
+
+      <div class="portal-cards-grid">
+        <!-- Provider Portal Card -->
+        <div class="portal-card">
+          <div>
+            <div class="portal-card-icon">🛠️</div>
+            <h3>Provider Portal</h3>
+            <p>Manage your service offerings, set availability and time slots, respond to inbound bookings, and track customer reviews.</p>
+          </div>
+          <a href="/provider/index.html" class="btn btn-primary" style="width: 100%;">
+            Open Provider Portal &rarr;
+          </a>
+        </div>
+
+        <!-- Admin Portal Card -->
+        <div class="portal-card">
+          <div>
+            <div class="portal-card-icon">⚡</div>
+            <h3>Administrator Portal</h3>
+            <p>Platform governance, provider verification queues, category taxonomy management, booking contract oversight, and audit trails.</p>
+          </div>
+          <a href="/admin/index.html" class="btn btn-secondary" style="width: 100%;">
+            Open Admin Portal &rarr;
+          </a>
+        </div>
+
+        <!-- Authentication Card -->
+        <div class="portal-card">
+          <div>
+            <div class="portal-card-icon">🔐</div>
+            <h3>Authentication &amp; Access</h3>
+            <p>Sign in with your role-based credentials (Provider or Admin) or register a new service provider account.</p>
+          </div>
+          <a href="/login.html" class="btn btn-secondary" style="width: 100%;">
+            Sign In / Register &rarr;
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <footer style="margin-top: auto; border-top: 1px solid var(--border); background: var(--bg-card); padding: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+      Taskora &bull; College DBMS Project &amp; Full-Stack Native Architecture &bull; PostgreSQL 16
+    </footer>
+  </div>
+
+  <script type="module">
+    import { Auth } from '/js/api.js';
+
+    // Auto-routing if already authenticated
+    if (Auth.isAuthenticated()) {
+      const user = Auth.getUser();
+      const nav = document.getElementById('auth-nav-container');
+      if (user && nav) {
+        nav.innerHTML = `
+          <span style="font-size: 0.85rem; margin-right: 0.75rem; color: var(--text-muted);">
+            Signed in as <strong>${user.full_name || user.email}</strong> (<span class="badge badge-booked">${user.role}</span>)
+          </span>
+          <button id="nav-logout-btn" class="btn btn-secondary btn-sm">Sign Out</button>
+        `;
+        document.getElementById('nav-logout-btn')?.addEventListener('click', () => {
+          Auth.logout();
+        });
+      }
+
+      if (user?.role === 'PROVIDER') {
+        window.location.replace('/provider/index.html');
+      } else if (user?.role === 'ADMIN') {
+        window.location.replace('/admin/index.html');
+      }
+    }
+  </script>
+</body>
+</html>
