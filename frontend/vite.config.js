@@ -23,6 +23,7 @@ export default defineConfig({
         login: resolve(__dirname, 'login.html'),
         provider: resolve(__dirname, 'provider/index.html'),
         admin: resolve(__dirname, 'admin/index.html'),
+        customer: resolve(__dirname, 'customer/index.html'),
       },
     },
   },

@@ -56,6 +56,11 @@ export async function serveStatic(req, res) {
     pathname = '/admin/index.html';
   }
 
+  // '/customer' or '/customer/' -> '/customer/index.html'
+  if (pathname === '/customer' || pathname === '/customer/') {
+    pathname = '/customer/index.html';
+  }
+
   // Construct absolute candidate path
   const safeRelative = pathname.replace(/^\/+/, '');
   const candidatePath = path.resolve(FRONTEND_DIR, safeRelative);

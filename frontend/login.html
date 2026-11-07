@@ -113,6 +113,8 @@
         window.location.replace('/provider/index.html');
       } else if (user?.role === 'ADMIN') {
         window.location.replace('/admin/index.html');
+      } else if (user?.role === 'CUSTOMER') {
+        window.location.replace('/customer/index.html');
       }
     }
 
@@ -188,8 +190,10 @@
             window.location.href = '/provider/index.html';
           } else if (role === 'ADMIN') {
             window.location.href = '/admin/index.html';
+          } else if (role === 'CUSTOMER') {
+            window.location.href = '/customer/index.html';
           } else {
-            showAlert(`Logged in successfully as ${role}. (Customer portal will be linked in upcoming phase).`, 'success');
+            showAlert(`Logged in successfully as ${role}.`, 'success');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Sign In';
           }
@@ -235,8 +239,10 @@
         setTimeout(() => {
           if (role === 'PROVIDER') {
             window.location.href = '/provider/index.html';
+          } else if (role === 'CUSTOMER') {
+            window.location.href = '/customer/index.html';
           } else {
-            showAlert('Customer account created successfully!', 'success');
+            showAlert('Account created successfully!', 'success');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Account';
           }

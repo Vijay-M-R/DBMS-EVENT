@@ -1,5 +1,5 @@
 // frontend/customer/customer.js
-// Member 2 (Ram): Customer Module Integration
+// Customer Module Integration for Taskora Freelance Service Platform
 
 import { 
   Auth, 
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Auth.clearAuth();
       showToast('Logged out successfully', 'info');
       setTimeout(() => {
-        window.location.href = '../login.html';
+        window.location.href = '/login.html';
       }, 500);
     });
   }
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----------------------------------------------------------------
   async function loadDashboardStats() {
     try {
-      const res = await apiFetch('/bookings/customer/history?status=ALL');
+      const res = await apiFetch('/bookings/customer/history');
       const bookings = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
 
       const statTotal = document.getElementById('stat-total');
@@ -74,11 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (statTotal) statTotal.innerText = bookings.length;
       if (statUpcoming) {
         statUpcoming.innerText = bookings.filter(
-          b => b.status === 'PENDING' || b.status === 'CONFIRMED'
+          b => b.booking_status === 'PENDING' || b.booking_status === 'ACCEPTED'
         ).length;
       }
       if (statCompleted) {
-        statCompleted.innerText = bookings.filter(b => b.status === 'COMPLETED').length;
+        statCompleted.innerText = bookings.filter(b => b.booking_status === 'COMPLETED').length;
       }
 
       const recentContainer = document.getElementById('recent-bookings');
@@ -92,12 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
       recentContainer.innerHTML = bookings.slice(0, 3).map(b => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
           <div>
-            <strong>${escapeHtml(b.service_title || 'Service')}</strong><br />
+            <strong>${escapeHtml(b.service_name || 'Service')}</strong><br />
             <small style="color: #64748b;">
-              ${formatDate(b.booking_date)} at ${formatTime(b.start_time)} • Provider: ${escapeHtml(b.provider_name || 'Assigned')}
+              ${formatDate(b.slot_date || b.booking_date)} at ${formatTime(b.start_time)} • Provider: ${escapeHtml(b.provider_name || 'Assigned')}
             </small>
           </div>
-          <span class="badge badge-${(b.status || 'pending').toLowerCase()}">${escapeHtml(b.status || 'PENDING')}</span>
+          <span class="badge badge-${(b.booking_status || 'pending').toLowerCase()}">${escapeHtml(b.booking_status || 'PENDING')}</span>
         </div>
       `).join('');
     } catch (err) {
@@ -113,42 +113,60 @@ document.addEventListener('DOMContentLoaded', () => {
   const filterBtn = document.getElementById('search-filter-btn');
   const servicesGrid = document.getElementById('services-grid');
 
+  // Dynamically load active categories from backend
+  async function loadCategories() {
+    if (!categoryFilter) return;
+    try {
+      const res = await apiFetch('/categories');
+      const categories = res?.data || (Array.isArray(res) ? res : []);
+      if (Array.isArray(categories) && categories.length > 0) {
+        categoryFilter.innerHTML = '<option value="">All Categories</option>' +
+          categories.map(c => `<option value="${c.category_id}">${escapeHtml(c.category_name)}</option>`).join('');
+      }
+    } catch (err) {
+      console.warn('Could not load categories:', err.message);
+    }
+  }
+
   async function loadServices() {
     if (!servicesGrid) return;
     servicesGrid.innerHTML = '<p style="color: #64748b;">Searching services...</p>';
 
     const params = new URLSearchParams();
     if (searchInput && searchInput.value.trim()) params.append('search', searchInput.value.trim());
-    if (categoryFilter && categoryFilter.value) params.append('category', categoryFilter.value);
+    if (categoryFilter && categoryFilter.value) params.append('categoryId', categoryFilter.value);
 
     try {
       const res = await apiFetch(`/services/search?${params.toString()}`);
-      const services = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
+      const services = res?.data?.services || (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []));
 
-      if (services.length === 0) {
+      if (!services || services.length === 0) {
         servicesGrid.innerHTML = '<p style="color: #64748b;">No matching services found.</p>';
         return;
       }
 
-      servicesGrid.innerHTML = services.map(s => `
+      servicesGrid.innerHTML = services.map(s => {
+        const escapedTitle = escapeHtml(s.service_name || 'Service').replace(/'/g, "\\'");
+        return `
         <div class="service-card">
           <div>
-            <span class="badge" style="background:#eff6ff; color:#2563eb;">${escapeHtml(s.category || 'General')}</span>
-            <h4 style="margin: 0.5rem 0 0.25rem 0;">${escapeHtml(s.title)}</h4>
+            <span class="badge" style="background:#eff6ff; color:#2563eb;">${escapeHtml(s.category_name || 'General')}</span>
+            <h4 style="margin: 0.5rem 0 0.25rem 0;">${escapeHtml(s.service_name)}</h4>
             <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.5rem;">${escapeHtml(s.description || '')}</p>
             <div style="font-size: 0.85rem; color: #475569; margin-bottom: 0.5rem;">
               Provider: <strong>${escapeHtml(s.provider_name || 'Verified Provider')}</strong><br />
-              Rating: ★ <strong>${s.avg_rating || '5.0'}</strong> (${s.total_reviews || 0} reviews)
+              Rating: ★ <strong>${s.average_rating || '5.00'}</strong> (${s.total_reviews || 0} reviews)
             </div>
             <div class="service-price" style="font-size: 1.25rem; font-weight: 700; color: #2563eb; margin: 0.5rem 0;">
               ${formatCurrency(s.price || 0)}
             </div>
           </div>
-          <button class="btn btn-primary" onclick="window.openBookingModal(${s.service_id || s.id}, ${s.provider_id}, '${escapeHtml(s.title).replace(/'/g, "\\'")}', ${s.price})">Book Now</button>
+          <button class="btn btn-primary" onclick="window.openBookingModal(${s.service_id}, ${s.provider_id}, '${escapedTitle}', ${s.price})">Book Now</button>
         </div>
-      `).join('');
+      `;
+      }).join('');
     } catch (err) {
-      servicesGrid.innerHTML = '<p style="color: #ef4444;">Error loading services catalog.</p>';
+      servicesGrid.innerHTML = '<p style="color: #ef4444;">Error loading services catalog: ' + escapeHtml(err.message) + '</p>';
     }
   }
 
@@ -159,21 +177,49 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----------------------------------------------------------------
   const bookingModal = document.getElementById('booking-modal');
   const bookingForm = document.getElementById('booking-form');
+  const slotSelect = document.getElementById('modal-slot-id');
+  const confirmBookingBtn = document.getElementById('confirm-booking-btn');
 
-  window.openBookingModal = (serviceId, providerId, title, price) => {
+  window.openBookingModal = async (serviceId, providerId, title, price) => {
     document.getElementById('modal-service-title').innerText = `Book: ${title}`;
     document.getElementById('modal-service-id').value = serviceId;
     document.getElementById('modal-provider-id').value = providerId;
     document.getElementById('modal-price').value = price;
     document.getElementById('modal-display-price').innerText = price;
+    document.getElementById('modal-notes').value = '';
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateInput = document.getElementById('modal-date');
-    dateInput.min = tomorrow.toISOString().split('T')[0];
-    dateInput.value = tomorrow.toISOString().split('T')[0];
+    if (slotSelect) {
+      slotSelect.innerHTML = '<option value="">Loading available slots...</option>';
+      slotSelect.disabled = true;
+    }
+    if (confirmBookingBtn) confirmBookingBtn.disabled = true;
 
     bookingModal.style.display = 'flex';
+
+    // Fetch live availability slots for provider
+    try {
+      const res = await apiFetch(`/availability/provider/${providerId}`);
+      const slots = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
+      const openSlots = slots.filter(s => s.slot_status === 'AVAILABLE');
+
+      if (openSlots.length === 0) {
+        slotSelect.innerHTML = '<option value="">No open slots available for this provider</option>';
+        slotSelect.disabled = true;
+        if (confirmBookingBtn) confirmBookingBtn.disabled = true;
+      } else {
+        slotSelect.innerHTML = '<option value="">-- Choose an appointment slot --</option>' +
+          openSlots.map(s => `
+            <option value="${s.slot_id}">
+              ${formatDate(s.slot_date)} • ${formatTime(s.start_time)} - ${formatTime(s.end_time)}
+            </option>
+          `).join('');
+        slotSelect.disabled = false;
+        if (confirmBookingBtn) confirmBookingBtn.disabled = false;
+      }
+    } catch (err) {
+      slotSelect.innerHTML = '<option value="">Error loading slots</option>';
+      showToast('Could not load provider availability slots: ' + err.message, 'error');
+    }
   };
 
   const closeBookingBtn = document.getElementById('close-booking-modal-btn');
@@ -186,13 +232,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (bookingForm) {
     bookingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const slotId = parseInt(document.getElementById('modal-slot-id').value, 10);
+      const serviceId = parseInt(document.getElementById('modal-service-id').value, 10);
+
+      if (!slotId) {
+        showToast('Please select a valid appointment slot.', 'warning');
+        return;
+      }
+
       const payload = {
-        service_id: document.getElementById('modal-service-id').value,
-        provider_id: document.getElementById('modal-provider-id').value,
-        booking_date: document.getElementById('modal-date').value,
-        start_time: document.getElementById('modal-time').value,
-        total_amount: document.getElementById('modal-price').value,
-        notes: document.getElementById('modal-notes').value.trim()
+        service_id: serviceId,
+        slot_id: slotId,
+        customer_notes: document.getElementById('modal-notes').value.trim() || undefined
       };
 
       try {
@@ -205,9 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast('Booking placed successfully!', 'success');
           bookingModal.style.display = 'none';
           document.querySelector('[data-tab="tab-bookings"]').click();
+          loadDashboardStats();
         }
       } catch (err) {
-        showToast(err.message || 'Booking slot conflict. Please choose another time.', 'error');
+        showToast(err.message || 'Booking slot conflict. Please choose another slot.', 'error');
       }
     });
   }
@@ -222,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bookingsList.innerHTML = '<p style="color: #64748b;">Loading history...</p>';
 
     try {
-      const res = await apiFetch('/bookings/customer/history?status=ALL');
+      const res = await apiFetch('/bookings/customer/history');
       const bookings = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
 
       if (bookings.length === 0) {
@@ -231,46 +283,56 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       bookingsList.innerHTML = bookings.map(b => {
-        const canCancel = b.status === 'PENDING' || b.status === 'CONFIRMED';
-        const canReview = b.status === 'COMPLETED' && !b.review_id;
+        const canCancel = b.booking_status === 'PENDING' || b.booking_status === 'ACCEPTED';
+        const canReview = b.booking_status === 'COMPLETED' && !b.review_id;
 
         return `
           <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; background: #fff;">
             <div>
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-                <h4 style="margin: 0;">${escapeHtml(b.service_title || 'Service')}</h4>
-                <span class="badge badge-${(b.status || 'pending').toLowerCase()}">${escapeHtml(b.status || 'PENDING')}</span>
+                <h4 style="margin: 0;">${escapeHtml(b.service_name || 'Service')}</h4>
+                <span class="badge badge-${(b.booking_status || 'pending').toLowerCase()}">${escapeHtml(b.booking_status || 'PENDING')}</span>
               </div>
               <p style="color: #64748b; font-size: 0.85rem; margin: 0.25rem 0;">
-                Date: <strong>${formatDate(b.booking_date)} at ${formatTime(b.start_time)}</strong> • Amount: <strong>${formatCurrency(b.total_amount)}</strong>
+                Date: <strong>${formatDate(b.slot_date || b.booking_date)} at ${formatTime(b.start_time)}</strong> • Amount: <strong>${formatCurrency(b.service_price)}</strong>
               </p>
               <p style="font-size: 0.85rem; color: #475569; margin: 0;">
-                Provider: <strong>${escapeHtml(b.provider_name || 'Assigned')}</strong> (${escapeHtml(b.provider_phone || 'Phone provided')})
+                Provider: <strong>${escapeHtml(b.provider_name || 'Assigned')}</strong> ${b.service_city ? `(${escapeHtml(b.service_city)})` : ''}
               </p>
-              ${b.given_rating ? `<p style="font-size: 0.85rem; color: #16a34a; margin-top: 0.25rem;">★ You rated: ${b.given_rating}/5</p>` : ''}
+              ${b.rating ? `<p style="font-size: 0.85rem; color: #16a34a; margin-top: 0.25rem;">★ You rated: ${b.rating}/5${b.review_comment ? ` - "${escapeHtml(b.review_comment)}"` : ''}</p>` : ''}
             </div>
             <div style="display: flex; gap: 0.5rem;">
-              ${canCancel ? `<button class="btn btn-danger" onclick="window.cancelBooking(${b.booking_id || b.id})">Cancel</button>` : ''}
-              ${canReview ? `<button class="btn btn-primary" onclick="window.openReviewModal(${b.booking_id || b.id}, ${b.provider_id}, ${b.service_id})">Review</button>` : ''}
+              ${canCancel ? `<button class="btn btn-danger" onclick="window.cancelBooking(${b.booking_id})">Cancel</button>` : ''}
+              ${canReview ? `<button class="btn btn-primary" onclick="window.openReviewModal(${b.booking_id}, ${b.provider_id}, ${b.service_id})">Review</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
     } catch (err) {
-      bookingsList.innerHTML = '<p style="color: #ef4444;">Failed to load booking history.</p>';
+      bookingsList.innerHTML = '<p style="color: #ef4444;">Failed to load booking history: ' + escapeHtml(err.message) + '</p>';
     }
   }
 
   window.cancelBooking = async (bookingId) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    const reason = prompt('Please enter the cancellation reason (minimum 3 characters):', 'Customer requested cancellation');
+    if (reason === null) return; // User clicked Cancel
+    if (reason.trim().length < 3) {
+      showToast('Cancellation reason must be at least 3 characters.', 'warning');
+      return;
+    }
+
     try {
       const res = await apiFetch(`/bookings/${bookingId}/status`, {
         method: 'PATCH',
-        body: { status: 'CANCELLED' }
+        body: {
+          booking_status: 'CANCELLED',
+          cancellation_reason: reason.trim()
+        }
       });
       if (res) {
         showToast('Booking cancelled successfully', 'info');
         loadBookingHistory();
+        loadDashboardStats();
       }
     } catch (err) {
       showToast(err.message || 'Failed to cancel booking', 'error');
@@ -287,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('rev-booking-id').value = bookingId;
     document.getElementById('rev-provider-id').value = providerId;
     document.getElementById('rev-service-id').value = serviceId || '';
+    document.getElementById('rev-comment').value = '';
     reviewModal.style.display = 'flex';
   };
 
@@ -301,10 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
     reviewForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = {
-        booking_id: document.getElementById('rev-booking-id').value,
-        provider_id: document.getElementById('rev-provider-id').value,
-        service_id: document.getElementById('rev-service-id').value,
-        rating: Number(document.getElementById('rev-rating').value),
+        booking_id: parseInt(document.getElementById('rev-booking-id').value, 10),
+        rating: parseInt(document.getElementById('rev-rating').value, 10),
         comment: document.getElementById('rev-comment').value.trim()
       };
 
@@ -325,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------------------
-  // 7. Profile Management (uses users.full_name)
+  // 7. Profile Management
   // ----------------------------------------------------------------
   const profileForm = document.getElementById('profile-form');
 
@@ -375,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Load dashboard on start
+  // Initialization
+  loadCategories();
   loadDashboardStats();
 });

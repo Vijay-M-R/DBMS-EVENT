@@ -87,9 +87,9 @@
       text-transform: uppercase;
     }
     .badge-pending { background: #fef3c7; color: #b45309; }
-    .badge-confirmed { background: #dbeafe; color: #1d4ed8; }
+    .badge-confirmed, .badge-accepted { background: #dbeafe; color: #1d4ed8; }
     .badge-completed { background: #dcfce7; color: #15803d; }
-    .badge-cancelled { background: #fee2e2; color: #b91c1c; }
+    .badge-cancelled, .badge-rejected { background: #fee2e2; color: #b91c1c; }
     .btn {
       padding: 0.5rem 1rem;
       border-radius: 6px;
@@ -236,27 +236,23 @@
         <input type="hidden" id="modal-price" />
 
         <div class="form-group">
-          <label>Date</label>
-          <input type="date" id="modal-date" required />
-        </div>
-        <div class="form-group">
-          <label>Time Slot</label>
-          <select id="modal-time" required>
-            <option value="09:00:00">09:00 AM</option>
-            <option value="11:00:00">11:00 AM</option>
-            <option value="14:00:00">02:00 PM</option>
-            <option value="16:00:00">04:00 PM</option>
+          <label>Select Available Time Slot</label>
+          <select id="modal-slot-id" required>
+            <option value="">Loading available provider slots...</option>
           </select>
+          <small id="slot-help-text" style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+            Select an open appointment slot published by this verified provider.
+          </small>
         </div>
         <div class="form-group">
           <label>Special Instructions / Notes</label>
-          <textarea id="modal-notes" rows="2" placeholder="e.g. Call before arriving"></textarea>
+          <textarea id="modal-notes" rows="2" placeholder="e.g. Please bring extra piping materials"></textarea>
         </div>
         <div style="font-weight: 700; margin-bottom: 1rem;">
-          Total: ₹<span id="modal-display-price">0</span>
+          Total Price: ₹<span id="modal-display-price">0</span>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-          <button type="submit" class="btn btn-primary" style="flex: 1;">Confirm Booking</button>
+          <button type="submit" class="btn btn-primary" id="confirm-booking-btn" style="flex: 1;">Confirm Booking</button>
           <button type="button" class="btn btn-secondary" id="close-booking-modal-btn">Cancel</button>
         </div>
       </form>
@@ -266,7 +262,7 @@
   <!-- Review Modal -->
   <div class="modal-overlay" id="review-modal">
     <div class="modal-box">
-      <h3>Submit Review & Rating</h3>
+      <h3>Submit Review &amp; Rating</h3>
       <form id="review-form" style="margin-top: 1rem;">
         <input type="hidden" id="rev-booking-id" />
         <input type="hidden" id="rev-provider-id" />
@@ -294,6 +290,7 @@
     </div>
   </div>
 
+  <div id="toast-container"></div>
   <script type="module" src="./customer.js"></script>
 </body>
 </html>

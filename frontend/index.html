@@ -80,6 +80,18 @@
       <p>A native multi-tier Freelance Service Platform connecting customers with vetted local service professionals.</p>
 
       <div class="portal-cards-grid">
+        <!-- Customer Portal Card -->
+        <div class="portal-card">
+          <div>
+            <div class="portal-card-icon">🛒</div>
+            <h3>Customer Portal</h3>
+            <p>Browse verified service providers, book appointment slots, monitor real-time booking status, and submit service ratings.</p>
+          </div>
+          <a href="/customer/index.html" class="btn btn-primary" style="width: 100%;">
+            Open Customer Portal &rarr;
+          </a>
+        </div>
+
         <!-- Provider Portal Card -->
         <div class="portal-card">
           <div>
@@ -87,7 +99,7 @@
             <h3>Provider Portal</h3>
             <p>Manage your service offerings, set availability and time slots, respond to inbound bookings, and track customer reviews.</p>
           </div>
-          <a href="/provider/index.html" class="btn btn-primary" style="width: 100%;">
+          <a href="/provider/index.html" class="btn btn-secondary" style="width: 100%;">
             Open Provider Portal &rarr;
           </a>
         </div>
@@ -146,6 +158,8 @@
         window.location.replace('/provider/index.html');
       } else if (user?.role === 'ADMIN') {
         window.location.replace('/admin/index.html');
+      } else if (user?.role === 'CUSTOMER') {
+        window.location.replace('/customer/index.html');
       }
     }
   </script>
