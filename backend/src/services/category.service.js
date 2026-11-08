@@ -6,7 +6,7 @@ export class CategoryService {
    */
   static async getActiveCategories() {
     const res = await query(
-      `SELECT category_id, category_name, description, created_at 
+      `SELECT category_id, category_name, description, category_status, created_at 
        FROM categories 
        WHERE category_status = 'ACTIVE' 
        ORDER BY category_name ASC`

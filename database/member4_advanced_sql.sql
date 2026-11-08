@@ -6,20 +6,24 @@
 BEGIN;
 
 -- 1) Seed parent tables first. Six customers, six providers, and one administrator.
+-- Passwords:
+-- Customers: Customer@1 .. Customer@6
+-- Providers: Provider@1 .. Provider@6
+-- Admin    : Admin@2026
 INSERT INTO users (user_id, full_name, email, password_hash, phone, role, account_status) VALUES
-(1,'Ananya Rao','ananya.demo@example.test','DEMO_HASH_ONLY','9000000001','CUSTOMER','ACTIVE'),
-(2,'Ravi Kumar','ravi.demo@example.test','DEMO_HASH_ONLY','9000000002','CUSTOMER','ACTIVE'),
-(3,'Meera Shah','meera.demo@example.test','DEMO_HASH_ONLY','9000000003','CUSTOMER','ACTIVE'),
-(4,'Arjun Das','arjun.demo@example.test','DEMO_HASH_ONLY','9000000004','CUSTOMER','ACTIVE'),
-(5,'Nisha Patel','nisha.demo@example.test','DEMO_HASH_ONLY','9000000005','CUSTOMER','ACTIVE'),
-(6,'Kiran Joseph','kiran.demo@example.test','DEMO_HASH_ONLY','9000000006','CUSTOMER','ACTIVE'),
-(7,'Suresh Electrician','suresh.demo@example.test','DEMO_HASH_ONLY','9000000007','PROVIDER','ACTIVE'),
-(8,'Lakshmi Plumber','lakshmi.demo@example.test','DEMO_HASH_ONLY','9000000008','PROVIDER','ACTIVE'),
-(9,'Farhan Tutor','farhan.demo@example.test','DEMO_HASH_ONLY','9000000009','PROVIDER','ACTIVE'),
-(10,'Divya Cleaner','divya.demo@example.test','DEMO_HASH_ONLY','9000000010','PROVIDER','ACTIVE'),
-(11,'Manoj Carpenter','manoj.demo@example.test','DEMO_HASH_ONLY','9000000011','PROVIDER','ACTIVE'),
-(12,'Pooja Photographer','pooja.demo@example.test','DEMO_HASH_ONLY','9000000012','PROVIDER','ACTIVE'),
-(13,'Marketplace Admin','admin.demo@example.test','DEMO_HASH_ONLY','9000000013','ADMIN','ACTIVE');
+(1,'Ananya Rao','ananya.demo@example.test','$2b$10$MhTrU9RTxtiWlOV8jYMqtuVdrNehiPn6XJgbJahWU9zas0m3dA5uG','9000000001','CUSTOMER','ACTIVE'),
+(2,'Ravi Kumar','ravi.demo@example.test','$2b$10$wXuXd2AnK9jLbOoDN9lEie2oS04qvcYM0OXfCqzQKk.hYx1cJX2ra','9000000002','CUSTOMER','ACTIVE'),
+(3,'Meera Shah','meera.demo@example.test','$2b$10$3eIRmAu74zmPOee4d95FCOiXQtZMMqS3E5kF5H6CyyaeR8ULPgCcW','9000000003','CUSTOMER','ACTIVE'),
+(4,'Arjun Das','arjun.demo@example.test','$2b$10$5pQT8235aJY1/dBL2NqrEu2kTmMBOpfYC2h7cVvG7F3E6U9pCzqju','9000000004','CUSTOMER','ACTIVE'),
+(5,'Nisha Patel','nisha.demo@example.test','$2b$10$H142aniD8cLeJ98uz8FRSe3RhpGNx5e8cYZDR0V.BMlAjEZ.Vn.zi','9000000005','CUSTOMER','ACTIVE'),
+(6,'Kiran Joseph','kiran.demo@example.test','$2b$10$o5X1xeq9iQZVYjB7jmWlhu6GOAH4woAwt7QSPA2dwETJq2o5707S.','9000000006','CUSTOMER','ACTIVE'),
+(7,'Suresh Electrician','suresh.demo@example.test','$2b$10$hKna2wLFmdVtVhM313T/8.BFjlZORSkBOGbp4kZj/Fn0uU3gYJnoi','9000000007','PROVIDER','ACTIVE'),
+(8,'Lakshmi Plumber','lakshmi.demo@example.test','$2b$10$sTobvus8jPJkCgK35hEb.uMIlFclXaJG5E6Lt1twvyVYa7X/e2RHa','9000000008','PROVIDER','ACTIVE'),
+(9,'Farhan Tutor','farhan.demo@example.test','$2b$10$lKdxrY/vhPZkRRBPb32Li.sZacZKO/krAZLDMH3xB0k0xnTVDeJiq','9000000009','PROVIDER','ACTIVE'),
+(10,'Divya Cleaner','divya.demo@example.test','$2b$10$muufm84a0Vnz1CiOPyiXJ.xnAgxM0ypMZffuAndqdz1R7ivwCKzRS','9000000010','PROVIDER','ACTIVE'),
+(11,'Manoj Carpenter','manoj.demo@example.test','$2b$10$yNscIguKgbSIInAHGJdzDuRIG7GuHkdhVGkar4iuiNpmvnVkFrZoK','9000000011','PROVIDER','ACTIVE'),
+(12,'Pooja Photographer','pooja.demo@example.test','$2b$10$YKBsE57vCmEAR8QJvtXwROes4/t5OI7yUQMHiQtXgEzHKWsy9xR/a','9000000012','PROVIDER','ACTIVE'),
+(13,'Marketplace Admin','admin.demo@example.test','$2b$10$FNnxflLmNu50OTdXsDatn.yI6kIHIo7.1I656HcFxSqgigidS3C9a','9000000013','ADMIN','ACTIVE');
 
 INSERT INTO customer_profiles (customer_id,user_id,date_of_birth,gender) VALUES
 (1,1,'2001-04-12','FEMALE'),(2,2,'1999-09-23','MALE'),(3,3,'2000-01-18','FEMALE'),

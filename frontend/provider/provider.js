@@ -315,7 +315,7 @@ function populateCategoryDropdown(categories) {
   const select = document.getElementById('svc-category');
   select.innerHTML = '<option value="">Select Category...</option>';
   categories.forEach((cat) => {
-    if (cat.category_status === 'ACTIVE') {
+    if (!cat.category_status || cat.category_status === 'ACTIVE') {
       const opt = document.createElement('option');
       opt.value = cat.category_id;
       opt.textContent = cat.category_name;

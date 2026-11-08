@@ -25,11 +25,13 @@ export class Router {
           // Mount sub-router by adopting its routes and prefixing them
           handler.routes.forEach((r) => {
             const combinedPath = `${mountPath}${r.path === '/' ? '' : r.path}`;
+            const paramNames = [];
+            const regex = this._pathToRegex(combinedPath, paramNames);
             this.routes.push({
               method: r.method,
               path: combinedPath,
-              paramNames: r.paramNames,
-              regex: this._pathToRegex(combinedPath, r.paramNames),
+              paramNames,
+              regex,
               handlers: [...handler.middlewares, ...r.handlers],
             });
           });
