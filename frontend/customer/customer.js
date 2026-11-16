@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (statTotal) statTotal.innerText = bookings.length;
       if (statUpcoming) {
         statUpcoming.innerText = bookings.filter(
-          b => b.booking_status === 'PENDING' || b.booking_status === 'ACCEPTED'
+          b => b.booking_status === 'PENDING' || b.booking_status === 'ACCEPTED' || b.booking_status === 'PENDING_CONFIRMATION'
         ).length;
       }
       if (statCompleted) {
@@ -284,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       bookingsList.innerHTML = bookings.map(b => {
         const canCancel = b.booking_status === 'PENDING' || b.booking_status === 'ACCEPTED';
+        const canVerify = b.booking_status === 'PENDING_CONFIRMATION';
         const canReview = b.booking_status === 'COMPLETED' && !b.review_id;
 
         return `
@@ -303,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div style="display: flex; gap: 0.5rem;">
               ${canCancel ? `<button class="btn btn-danger" onclick="window.cancelBooking(${b.booking_id})">Cancel</button>` : ''}
+              ${canVerify ? `<button class="btn btn-success" onclick="window.confirmCompletion(${b.booking_id})">✓ Verify &amp; Complete</button>` : ''}
               ${canReview ? `<button class="btn btn-primary" onclick="window.openReviewModal(${b.booking_id}, ${b.provider_id}, ${b.service_id})">Review</button>` : ''}
             </div>
           </div>
@@ -312,6 +314,23 @@ document.addEventListener('DOMContentLoaded', () => {
       bookingsList.innerHTML = '<p style="color: #ef4444;">Failed to load booking history: ' + escapeHtml(err.message) + '</p>';
     }
   }
+
+  window.confirmCompletion = async (bookingId) => {
+    if (!confirm('Confirm that the provider completed the service satisfactorily? This will mark the booking as COMPLETED and let you leave a review.')) return;
+    try {
+      const res = await apiFetch(`/bookings/${bookingId}/status`, {
+        method: 'PATCH',
+        body: { booking_status: 'COMPLETED' }
+      });
+      if (res) {
+        showToast('Service confirmed as completed! You can now leave a review.', 'success');
+        loadBookingHistory();
+        loadDashboardStats();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to confirm completion', 'error');
+    }
+  };
 
   window.cancelBooking = async (bookingId) => {
     const reason = prompt('Please enter the cancellation reason (minimum 3 characters):', 'Customer requested cancellation');

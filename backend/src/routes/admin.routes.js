@@ -34,3 +34,7 @@ adminRouter.patch('/services/:id/status', AdminController.updateServiceStatus);
 
 // Audit Trail Logs
 adminRouter.get('/logs', AdminController.getAuditLogs);
+
+// Report Generations (Phase 2 Requirement: 2 Reports)
+adminRouter.get('/reports/financial', AdminController.getFinancialReport);
+adminRouter.get('/reports/providers', AdminController.getProviderPerformanceReport);

@@ -649,4 +649,96 @@ export class AdminService {
       },
     };
   }
+
+  /**
+   * Admin: Generate Financial and Revenue Summary Report (Phase 2 Requirement)
+   */
+  static async getFinancialReport() {
+    const kpiRes = await query(`
+      SELECT 
+        COUNT(*) AS total_bookings,
+        COUNT(CASE WHEN booking_status = 'COMPLETED' THEN 1 END) AS completed_bookings,
+        COUNT(CASE WHEN booking_status = 'CANCELLED' THEN 1 END) AS cancelled_bookings,
+        COUNT(CASE WHEN booking_status = 'PENDING' THEN 1 END) AS pending_bookings,
+        COALESCE(SUM(CASE WHEN booking_status = 'COMPLETED' THEN service_price ELSE 0 END), 0) AS total_revenue,
+        ROUND(COALESCE(AVG(CASE WHEN booking_status = 'COMPLETED' THEN service_price END), 0), 2) AS avg_completed_booking_value,
+        COALESCE(SUM(CASE WHEN booking_status = 'CANCELLED' THEN service_price ELSE 0 END), 0) AS lost_cancelled_value
+      FROM bookings;
+    `);
+
+    const catRes = await query(`
+      SELECT 
+        c.category_id,
+        c.category_name,
+        COUNT(b.booking_id) AS total_bookings,
+        COUNT(CASE WHEN b.booking_status = 'COMPLETED' THEN 1 END) AS completed_bookings,
+        COALESCE(SUM(CASE WHEN b.booking_status = 'COMPLETED' THEN b.service_price ELSE 0 END), 0) AS category_revenue,
+        ROUND(COALESCE(AVG(s.price), 0), 2) AS avg_service_price
+      FROM categories c
+      LEFT JOIN services s ON c.category_id = s.category_id
+      LEFT JOIN bookings b ON s.service_id = b.service_id
+      GROUP BY c.category_id, c.category_name
+      ORDER BY category_revenue DESC, c.category_name ASC;
+    `);
+
+    const recentRes = await query(`
+      SELECT 
+        booking_id,
+        customer_name,
+        provider_name,
+        service_name,
+        category_name,
+        service_price,
+        booking_status,
+        booking_date,
+        review_rating
+      FROM v_customer_booking_summary
+      ORDER BY booking_date DESC
+      LIMIT 10;
+    `);
+
+    return {
+      report_title: 'Platform Financial & Revenue Generation Report',
+      generated_at: new Date().toISOString(),
+      kpis: kpiRes.rows[0],
+      categories: catRes.rows,
+      recent_transactions: recentRes.rows,
+    };
+  }
+
+  /**
+   * Admin: Generate Provider Performance and Rating Audit Report (Phase 2 Requirement)
+   */
+  static async getProviderPerformanceReport() {
+    const kpiRes = await query(`
+      SELECT 
+        COUNT(*) AS total_providers,
+        COUNT(CASE WHEN verification_status = 'VERIFIED' THEN 1 END) AS verified_providers,
+        COUNT(CASE WHEN verification_status = 'PENDING' THEN 1 END) AS pending_providers,
+        ROUND(COALESCE(AVG(average_rating), 0), 2) AS platform_average_rating,
+        COALESCE(SUM(total_reviews), 0) AS platform_total_reviews
+      FROM provider_profiles;
+    `);
+
+    const metricsRes = await query(`
+      SELECT 
+        provider_id,
+        provider_name,
+        service_city,
+        verification_status,
+        total_services,
+        completed_bookings,
+        average_rating,
+        total_reviews
+      FROM v_provider_performance
+      ORDER BY average_rating DESC, completed_bookings DESC;
+    `);
+
+    return {
+      report_title: 'Provider Performance & Quality Audit Report',
+      generated_at: new Date().toISOString(),
+      kpis: kpiRes.rows[0],
+      providers: metricsRes.rows,
+    };
+  }
 }

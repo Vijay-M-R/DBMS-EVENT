@@ -548,8 +548,8 @@ window.updateBookingStatus = async (bookingId, newStatus) => {
 
   if (newStatus === 'ACCEPTED') {
     if (!confirm('Accept this customer reservation?')) return;
-  } else if (newStatus === 'COMPLETED') {
-    if (!confirm('Mark this service appointment as successfully COMPLETED?')) return;
+  } else if (newStatus === 'PENDING_CONFIRMATION') {
+    if (!confirm('Submit this job for customer verification? The customer will need to confirm the work is done.')) return;
   } else if (newStatus === 'REJECTED') {
     const reason = prompt('Please enter a reason for rejecting this booking request (min 3 characters):');
     if (!reason || reason.trim().length < 3) {
@@ -595,7 +595,7 @@ function renderBookingHistory(statusFilter) {
     if (b.booking_status === 'ACCEPTED') {
       actionsHtml = `
         <div style="display: flex; gap: 0.35rem;">
-          <button class="btn btn-success btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'COMPLETED')">✓ Complete</button>
+          <button class="btn btn-success btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'PENDING_CONFIRMATION')">✓ Submit for Verification</button>
           <button class="btn btn-danger btn-sm" onclick="window.updateBookingStatus(${b.booking_id}, 'CANCELLED')">Cancel</button>
         </div>
       `;

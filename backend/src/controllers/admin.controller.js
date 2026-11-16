@@ -179,4 +179,22 @@ export class AdminController {
       return sendError(res, err.statusCode || 500, err.message);
     }
   }
+
+  static async getFinancialReport(req, res) {
+    try {
+      const report = await AdminService.getFinancialReport();
+      return sendJson(res, 200, report, 'Financial report generated');
+    } catch (err) {
+      return sendError(res, err.statusCode || 500, err.message);
+    }
+  }
+
+  static async getProviderPerformanceReport(req, res) {
+    try {
+      const report = await AdminService.getProviderPerformanceReport();
+      return sendJson(res, 200, report, 'Provider performance report generated');
+    } catch (err) {
+      return sendError(res, err.statusCode || 500, err.message);
+    }
+  }
 }

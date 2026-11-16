@@ -25,7 +25,7 @@ export const validateUpdateBookingStatus = (data) => {
   const errors = [];
   const { booking_status, cancellation_reason } = data || {};
 
-  const allowedStatuses = ['ACCEPTED', 'REJECTED', 'COMPLETED', 'CANCELLED'];
+  const allowedStatuses = ['ACCEPTED', 'REJECTED', 'PENDING_CONFIRMATION', 'COMPLETED', 'CANCELLED'];
   if (!booking_status || !allowedStatuses.includes(booking_status)) {
     errors.push(`booking_status is required and must be one of: ${allowedStatuses.join(', ')}`);
   }

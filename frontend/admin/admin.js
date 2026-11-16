@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBookingEvents();
   initServiceEvents();
   initLogsEvents();
+  initReportsEvents();
   initConfirmActionModal();
 
   // Load Initial View (Dashboard & Categories cache)
@@ -112,6 +113,9 @@ function onTabActivated(tabId) {
     case 'tab-logs':
       loadAuditLogs(1);
       break;
+    case 'tab-reports':
+      loadReports();
+      break;
   }
 }
 
@@ -127,6 +131,7 @@ function getStatusBadge(status) {
     case 'AVAILABLE':
       return `<span class="badge badge-verified">${escapeHtml(s)}</span>`;
     case 'PENDING':
+    case 'PENDING_CONFIRMATION':
       return `<span class="badge badge-pending">${escapeHtml(s)}</span>`;
     case 'COMPLETED':
       return `<span class="badge badge-completed">${escapeHtml(s)}</span>`;
@@ -1297,4 +1302,175 @@ function renderPagination(container, pagination, fnName) {
       </button>
     </div>
   `;
+}
+
+// ============================================================================
+// EXECUTIVE REPORTS GENERATION (PHASE 2 REQUIREMENT)
+// ============================================================================
+
+let currentFinancialReportData = null;
+let currentProviderReportData = null;
+
+function initReportsEvents() {
+  const refreshBtn = document.getElementById('btn-refresh-reports');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => loadReports());
+  }
+
+  const exportFinBtn = document.getElementById('btn-export-financial-csv');
+  if (exportFinBtn) {
+    exportFinBtn.addEventListener('click', () => exportFinancialCsv());
+  }
+
+  const exportProvBtn = document.getElementById('btn-export-provider-csv');
+  if (exportProvBtn) {
+    exportProvBtn.addEventListener('click', () => exportProviderCsv());
+  }
+}
+
+async function loadReports() {
+  await Promise.all([loadFinancialReport(), loadProviderReport()]);
+}
+
+async function loadFinancialReport() {
+  try {
+    const res = await apiFetch('/admin/reports/financial');
+    if (!res.success) throw new Error(res.message);
+    const data = res.data;
+    currentFinancialReportData = data;
+
+    // Render KPIs
+    const kpis = data.kpis || {};
+    const revEl = document.getElementById('rep-fin-revenue');
+    const compEl = document.getElementById('rep-fin-completed');
+    const avgEl = document.getElementById('rep-fin-avg');
+    const cancEl = document.getElementById('rep-fin-cancelled');
+
+    if (revEl) revEl.textContent = formatCurrency(kpis.total_revenue || 0);
+    if (compEl) compEl.textContent = kpis.completed_bookings || 0;
+    if (avgEl) avgEl.textContent = formatCurrency(kpis.avg_completed_booking_value || 0);
+    if (cancEl) cancEl.textContent = formatCurrency(kpis.lost_cancelled_value || 0);
+
+    // Render Category Distribution Table
+    const catTbody = document.getElementById('financial-category-table-body');
+    if (catTbody) {
+      if (!data.categories || data.categories.length === 0) {
+        catTbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center; padding:1.5rem;">No category data available</td></tr>';
+      } else {
+        catTbody.innerHTML = data.categories.map((c) => `
+          <tr>
+            <td><code>#${c.category_id}</code></td>
+            <td><strong>${escapeHtml(c.category_name)}</strong></td>
+            <td>${c.total_bookings}</td>
+            <td><span class="badge badge-active">${c.completed_bookings}</span></td>
+            <td><strong style="color:#10b981;">${formatCurrency(c.category_revenue)}</strong></td>
+            <td>${formatCurrency(c.avg_service_price)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Render Recent Transactions Table
+    const txTbody = document.getElementById('financial-transactions-table-body');
+    if (txTbody) {
+      if (!data.recent_transactions || data.recent_transactions.length === 0) {
+        txTbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center; padding:1.5rem;">No recent transactions found</td></tr>';
+      } else {
+        txTbody.innerHTML = data.recent_transactions.map((tx) => `
+          <tr>
+            <td><code>#${tx.booking_id}</code></td>
+            <td>${escapeHtml(tx.customer_name)}</td>
+            <td>${escapeHtml(tx.provider_name)}</td>
+            <td>${escapeHtml(tx.service_name)}</td>
+            <td>${escapeHtml(tx.category_name)}</td>
+            <td><strong>${formatCurrency(tx.service_price)}</strong></td>
+            <td>${getStatusBadge(tx.booking_status)}</td>
+            <td>${tx.review_rating ? '★ ' + tx.review_rating : '<span class="text-muted">No review</span>'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    showToast(`Failed to load financial report: ${err.message}`, 'error');
+  }
+}
+
+async function loadProviderReport() {
+  try {
+    const res = await apiFetch('/admin/reports/providers');
+    if (!res.success) throw new Error(res.message);
+    const data = res.data;
+    currentProviderReportData = data;
+
+    // Render KPIs
+    const kpis = data.kpis || {};
+    const totalEl = document.getElementById('rep-prov-total');
+    const verEl = document.getElementById('rep-prov-verified');
+    const ratEl = document.getElementById('rep-prov-rating');
+    const revEl = document.getElementById('rep-prov-reviews');
+
+    if (totalEl) totalEl.textContent = kpis.total_providers || 0;
+    if (verEl) verEl.textContent = kpis.verified_providers || 0;
+    if (ratEl) ratEl.textContent = `★ ${parseFloat(kpis.platform_average_rating || 0).toFixed(1)}`;
+    if (revEl) revEl.textContent = kpis.platform_total_reviews || 0;
+
+    // Render Provider Table from v_provider_performance
+    const tbody = document.getElementById('provider-report-table-body');
+    if (tbody) {
+      if (!data.providers || data.providers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center; padding:1.5rem;">No provider records found in View</td></tr>';
+      } else {
+        tbody.innerHTML = data.providers.map((p) => `
+          <tr>
+            <td><code>#${p.provider_id}</code></td>
+            <td><strong>${escapeHtml(p.provider_name)}</strong></td>
+            <td>${escapeHtml(p.service_city || 'N/A')}</td>
+            <td>${getStatusBadge(p.verification_status)}</td>
+            <td>${p.total_services}</td>
+            <td><span class="badge badge-active">${p.completed_bookings}</span></td>
+            <td><strong style="color:#f59e0b;">★ ${parseFloat(p.average_rating || 0).toFixed(2)}</strong></td>
+            <td>${p.total_reviews} reviews</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    showToast(`Failed to load provider performance report: ${err.message}`, 'error');
+  }
+}
+
+function exportFinancialCsv() {
+  if (!currentFinancialReportData || !currentFinancialReportData.categories) {
+    showToast('Please load financial report data before exporting.', 'warning');
+    return;
+  }
+  let csv = 'Category ID,Category Name,Total Bookings,Completed Bookings,Category Revenue,Average Service Price\n';
+  currentFinancialReportData.categories.forEach((c) => {
+    csv += `"${c.category_id}","${c.category_name}",${c.total_bookings},${c.completed_bookings},${c.category_revenue},${c.avg_service_price}\n`;
+  });
+  downloadCsvFile(csv, 'financial_revenue_report.csv');
+}
+
+function exportProviderCsv() {
+  if (!currentProviderReportData || !currentProviderReportData.providers) {
+    showToast('Please load provider report data before exporting.', 'warning');
+    return;
+  }
+  let csv = 'Provider ID,Provider Name,City,Verification Status,Active Services,Completed Bookings,Average Rating,Total Reviews\n';
+  currentProviderReportData.providers.forEach((p) => {
+    csv += `"${p.provider_id}","${p.provider_name}","${p.service_city || ''}","${p.verification_status}",${p.total_services},${p.completed_bookings},${p.average_rating},${p.total_reviews}\n`;
+  });
+  downloadCsvFile(csv, 'provider_performance_report.csv');
+}
+
+function downloadCsvFile(csvContent, fileName) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast(`Exported ${fileName} successfully!`, 'success');
 }

@@ -208,13 +208,13 @@ CREATE TABLE bookings (
     CONSTRAINT fk_bookings_slot FOREIGN KEY (slot_id) 
         REFERENCES availability_slots (slot_id) ON DELETE RESTRICT,
     CONSTRAINT chk_bookings_service_price CHECK (service_price >= 0.00),
-    CONSTRAINT chk_bookings_status CHECK (booking_status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED', 'CANCELLED'))
+    CONSTRAINT chk_bookings_status CHECK (booking_status IN ('PENDING', 'ACCEPTED', 'PENDING_CONFIRMATION', 'REJECTED', 'COMPLETED', 'CANCELLED'))
 );
 
--- Partial Unique Index: Exactly one ACTIVE (PENDING or ACCEPTED) booking permitted per slot
+-- Partial Unique Index: Exactly one ACTIVE (PENDING, ACCEPTED, or PENDING_CONFIRMATION) booking permitted per slot
 CREATE UNIQUE INDEX uq_active_slot_booking 
 ON bookings (slot_id) 
-WHERE booking_status IN ('PENDING', 'ACCEPTED');
+WHERE booking_status IN ('PENDING', 'ACCEPTED', 'PENDING_CONFIRMATION');
 
 CREATE TRIGGER trg_bookings_updated_at
 BEFORE UPDATE ON bookings
@@ -473,3 +473,101 @@ CREATE INDEX idx_provider_geo_rating ON provider_profiles (service_city, verific
 CREATE INDEX idx_slots_provider_date_status ON availability_slots (provider_id, slot_date, slot_status);
 CREATE INDEX idx_bookings_status_date ON bookings (booking_status, created_at DESC);
 CREATE INDEX idx_admin_logs_target ON admin_logs (target_type, target_id, created_at DESC);
+
+-- ----------------------------------------------------------------------------
+-- VIEWS (PHASE 2 REQUIREMENT)
+-- ----------------------------------------------------------------------------
+
+-- VIEW 1: v_provider_performance
+CREATE OR REPLACE VIEW v_provider_performance AS
+SELECT 
+    pp.provider_id,
+    u.full_name AS provider_name,
+    pp.service_city,
+    pp.verification_status,
+    COUNT(DISTINCT s.service_id) AS total_services,
+    COUNT(DISTINCT b.booking_id) FILTER (WHERE b.booking_status = 'COMPLETED') AS completed_bookings,
+    pp.average_rating,
+    pp.total_reviews
+FROM provider_profiles pp
+JOIN users u ON pp.user_id = u.user_id
+LEFT JOIN services s ON pp.provider_id = s.provider_id
+LEFT JOIN bookings b ON s.service_id = b.service_id
+GROUP BY pp.provider_id, u.full_name, pp.service_city, pp.verification_status, pp.average_rating, pp.total_reviews;
+
+-- VIEW 2: v_customer_booking_summary
+CREATE OR REPLACE VIEW v_customer_booking_summary AS
+SELECT 
+    b.booking_id,
+    b.customer_id,
+    u_c.full_name AS customer_name,
+    s.service_id,
+    s.service_name,
+    c.category_name,
+    u_p.full_name AS provider_name,
+    b.service_price,
+    b.booking_status,
+    b.booking_date,
+    r.rating AS review_rating
+FROM bookings b
+JOIN customer_profiles cp ON b.customer_id = cp.customer_id
+JOIN users u_c ON cp.user_id = u_c.user_id
+JOIN services s ON b.service_id = s.service_id
+JOIN categories c ON s.category_id = c.category_id
+JOIN provider_profiles pp ON s.provider_id = pp.provider_id
+JOIN users u_p ON pp.user_id = u_p.user_id
+LEFT JOIN reviews r ON b.booking_id = r.booking_id;
+
+-- ----------------------------------------------------------------------------
+-- STORED PROCEDURES (PHASE 2 REQUIREMENT)
+-- ----------------------------------------------------------------------------
+
+-- PROCEDURE 1: complete_booking
+CREATE OR REPLACE PROCEDURE complete_booking(p_booking_id BIGINT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE bookings 
+    SET booking_status = 'COMPLETED',
+        updated_at = CURRENT_TIMESTAMP
+    WHERE booking_id = p_booking_id 
+      AND booking_status = 'ACCEPTED';
+      
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Booking with ID % does not exist or is not in ACCEPTED status', p_booking_id;
+    END IF;
+END;
+$$;
+
+-- PROCEDURE 2: cancel_booking
+CREATE OR REPLACE PROCEDURE cancel_booking(p_booking_id BIGINT, p_reason TEXT)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_slot_id BIGINT;
+    v_current_status VARCHAR(20);
+BEGIN
+    SELECT slot_id, booking_status INTO v_slot_id, v_current_status
+    FROM bookings WHERE booking_id = p_booking_id;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Booking with ID % does not exist', p_booking_id;
+    END IF;
+
+    IF v_current_status IN ('COMPLETED', 'CANCELLED') THEN
+        RAISE EXCEPTION 'Cannot cancel booking % because it is already in % status', p_booking_id, v_current_status;
+    END IF;
+
+    UPDATE bookings 
+    SET booking_status = 'CANCELLED',
+        cancellation_reason = p_reason,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE booking_id = p_booking_id;
+
+    IF v_slot_id IS NOT NULL THEN
+        UPDATE availability_slots
+        SET slot_status = 'AVAILABLE',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE slot_id = v_slot_id;
+    END IF;
+END;
+$$;
+

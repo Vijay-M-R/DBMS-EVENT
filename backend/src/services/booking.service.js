@@ -121,14 +121,22 @@ export class BookingService {
           throw err;
         }
 
-        if (targetStatus !== 'CANCELLED') {
-          const err = new Error('Customers can only cancel eligible bookings');
-          err.statusCode = 400;
-          throw err;
-        }
-
-        if (!['PENDING', 'ACCEPTED'].includes(currentStatus)) {
-          const err = new Error(`Cannot cancel booking in ${currentStatus} status`);
+        // Customer can cancel an active booking (PENDING or ACCEPTED)
+        if (targetStatus === 'CANCELLED') {
+          if (!['PENDING', 'ACCEPTED'].includes(currentStatus)) {
+            const err = new Error(`Cannot cancel booking in ${currentStatus} status`);
+            err.statusCode = 400;
+            throw err;
+          }
+        // Customer confirms completion after provider submits for verification
+        } else if (targetStatus === 'COMPLETED') {
+          if (currentStatus !== 'PENDING_CONFIRMATION') {
+            const err = new Error('You can only confirm completion for bookings awaiting your verification');
+            err.statusCode = 400;
+            throw err;
+          }
+        } else {
+          const err = new Error('Customers can only cancel bookings or confirm completion');
           err.statusCode = 400;
           throw err;
         }
@@ -141,7 +149,8 @@ export class BookingService {
 
         const validTransitions = {
           PENDING: ['ACCEPTED', 'REJECTED'],
-          ACCEPTED: ['COMPLETED', 'CANCELLED'],
+          ACCEPTED: ['PENDING_CONFIRMATION', 'CANCELLED'],
+          PENDING_CONFIRMATION: [],
           REJECTED: [],
           COMPLETED: [],
           CANCELLED: [],
